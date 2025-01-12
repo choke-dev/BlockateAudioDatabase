@@ -1,0 +1,58 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Audio {
+  id             String @id
+  name           String
+  category       String
+  uploaderName   String
+  uploaderUserId BigInt
+}
+
+model State {
+  id           String   @id @default(uuid())
+  state        String
+  codeVerifier String
+  createdAt    DateTime @default(now())
+  expiresAt    DateTime @default(dbgenerated("(now() + '00:01:00'::interval)"))
+}
+
+model Token {
+  id                   String   @id @default(uuid())
+  accessToken          String
+  tokenType            String
+  tokenScopes          String[]
+  refreshToken         String
+  createdAt            DateTime
+  userId               String
+  accessTokenExpiresAt DateTime
+  User                 User     @relation(fields: [userId], references: [id])
+}
+
+model User {
+  id                 String    @id
+  name               String
+  nickname           String
+  picture            String?
+  preferred_username String
+  profile            String
+  created_at         BigInt
+  sessions           Session[]
+  tokens             Token[]
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  createdAt DateTime @default(now())
+  expires   DateTime @default(dbgenerated("(now() + '7 days'::interval)"))
+  hash      String
+  User      User     @relation(fields: [userId], references: [id])
+}
