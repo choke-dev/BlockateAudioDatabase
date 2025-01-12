@@ -4,7 +4,7 @@
 
 <main class="mx-auto mt-8 max-w-3xl rounded-lg bg-white p-6 shadow-md">
 	<h1 class="mb-4 text-3xl font-semibold">
-		Terms of Service for Blockate Audio Database OAuth2 Application
+		Blockate Audio Database - Terms of Service
 	</h1>
 	<p class="mb-4"><strong>Effective Date:</strong> January 13, 2025</p>
 

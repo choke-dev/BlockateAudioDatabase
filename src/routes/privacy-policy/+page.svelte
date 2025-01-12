@@ -4,9 +4,9 @@
 
 <main class="mx-auto max-w-3xl p-6">
 	<h1 class="mb-4 text-3xl font-semibold">
-		Privacy Policy for Blockate Audio Database OAuth2 Application
+        Blockate Audio Database - Privacy Policy
 	</h1>
-	<p class="mb-4"><strong>Effective Date:</strong> [Insert Date]</p>
+	<p class="mb-4"><strong>Effective Date:</strong> January 13, 2025</p>
 
 	<p class="mb-6">
 		At Blockate Audio Database, we are committed to protecting your privacy. This Privacy Policy
@@ -27,7 +27,7 @@
 		</li>
 		<li>
 			<strong>No Other Personal Data:</strong> We do not collect or store any other personal or sensitive
-			data, such as email addresses, passwords, or payment information, from your OAuth2 account.
+			data, such as your name nor username, from your account.
 		</li>
 	</ul>
 
@@ -77,11 +77,11 @@
 	<h2 class="mb-2 mt-6 text-2xl font-semibold">7. Contact Information</h2>
 	<p class="mb-6">
 		If you have any questions about this Privacy Policy or the way we handle your data, please
-		contact us at [Your Contact Information].
+		contact us at legal@choke.dev.
 	</p>
 
 	<p class="mb-6">
-		By using the Blockate Audio Database OAuth2 application, you acknowledge that you have read and
+		By using the Blockate Audio Database, you acknowledge that you have read and
 		understood this Privacy Policy and agree to its terms.
 	</p>
 </main>
