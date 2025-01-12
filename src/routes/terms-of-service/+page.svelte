@@ -2,7 +2,7 @@
     <title>Blockate Audio Database - Terms of Service</title> 
 </svelte:head>
 
-<main class="mx-auto mt-8 max-w-3xl rounded-lg bg-white p-6 shadow-md">
+<main class="mx-auto mt-8 max-w-3xl rounded-lg p-6 shadow-md">
 	<h1 class="mb-4 text-3xl font-semibold">
 		Blockate Audio Database - Terms of Service
 	</h1>
