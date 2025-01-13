@@ -14,6 +14,7 @@
 
 	import type { Audio } from "@prisma/client";
 	import { onMount } from "svelte";
+	import { MAX_SEARCH_RESULTS_PER_PAGE } from "$lib/config";
 
     let searchResults: Audio[] = $state([]);
     let whitelistersData: { [key: number]: {"hasVerifiedBadge": true,"id": 0,"name": "string","displayName": "string"} } = $state({});
@@ -23,7 +24,6 @@
     let currentPage = $state(1);  // Track current page
     // svelte-ignore non_reactive_update
     let totalItems = $state(0);  // Total number of items (total audios found)
-    const itemsPerPage = 100;  // Set items per page to 100
 
     async function handleSearch(event?: Event) {
         if (event) event.preventDefault();
@@ -102,7 +102,7 @@
         </Table.Root>
 
         <!-- Pagination Component -->
-        <Pagination.Root class="mt-8" count={totalItems} perPage={itemsPerPage}>
+        <Pagination.Root class="mt-8" count={totalItems} perPage={MAX_SEARCH_RESULTS_PER_PAGE}>
             {#snippet children({ pages, currentPage })}
             <Pagination.Content>
                 <Pagination.Item>

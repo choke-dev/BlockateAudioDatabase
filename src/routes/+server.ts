@@ -1,3 +1,4 @@
+import { MAX_SEARCH_RESULTS_PER_PAGE } from "$lib/config";
 import { prisma } from "$lib/server/db";
 import type { RequestHandler } from "./$types";
 
@@ -40,8 +41,8 @@ export const GET: RequestHandler = async ({ url }) => {
                     mode: 'insensitive',
                 },
             },
-            skip: (currentPage - 1) * 100,  // Skipping by a multiplier of 100
-            take: 100,  // Fetch 100 items per page
+            skip: (currentPage - 1) * MAX_SEARCH_RESULTS_PER_PAGE,
+            take: MAX_SEARCH_RESULTS_PER_PAGE,
         });
 
         // Fetch total count of audios that match the query
