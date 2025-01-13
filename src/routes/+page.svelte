@@ -1,10 +1,5 @@
 <svelte:head>
     <title>Blockate Audio Database</title> 
-
-    <meta name="theme-color" content="#df3877">
-    <meta property="og:title" content="Blockate Audio Database">
-    <meta property="og:description" content="A database aiming to record every whitelisted audio in Blockate">
-    <meta property="og:image" content="/BlockateAudioDatabaseLogo.png" />
 </svelte:head>
 
 <script lang="ts">
