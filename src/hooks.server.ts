@@ -25,54 +25,24 @@ export const handleAuth: Handle = async ({ event, resolve }) => {
 }
 
 export const handleRoutePermissions: Handle = async ({ event, resolve }) => {
-	const userId = event.locals?.user?.id; // Get the user ID from the request context
-	const route = event.url.pathname;    // Get the requested route
+	const userId = event.locals?.user?.id;
+	const route = event.url.pathname;
 
-	if (!userId) {
-		throw error(401, 'Unauthorized');
-	}
+	if (Object.keys(ROUTE_PERMISSIONS).some((key) => route.startsWith(key))) {
 
-	// Check if the route has a permission requirement
-	if (ROUTE_PERMISSIONS[route]) {
-		console.log(`Checking permission for route: ${route}`);
-		console.log(`Request permission for route '${route}' is: ${USER_PERMISSIONS[userId]}`);
-		const requiredPermission = ROUTE_PERMISSIONS[route];
-		const userPermission = USER_PERMISSIONS[userId] || 0; // Default to 0 if not found
+		if (!userId) {
+			throw error(401, 'Unauthorized');
+		}
 
-		// Deny access if the user doesn't meet the required permission
+		const requiredPermission = Object.entries(ROUTE_PERMISSIONS).find(([key, value]) => route.startsWith(key))?.[1] || 0;
+		const userPermission = USER_PERMISSIONS[userId] || 0;
+
 		if (userPermission < requiredPermission) {
 			throw error(403, 'Forbidden');
 		}
 	}
 
-	// Proceed with the request
 	return resolve(event);
 };
 
 export const handle = sequence(handleAuth, handleRoutePermissions);
-
-// import type { Handle } from '@sveltejs/kit';
-// import * as auth from '$lib/server/auth.js';
-
-// const handleAuth: Handle = async ({ event, resolve }) => {
-// 	const sessionToken = event.cookies.get(auth.sessionCookieName);
-// 	if (!sessionToken) {
-// 		event.locals.user = null;
-// 		event.locals.session = null;
-// 		return resolve(event);
-// 	}
-
-// 	const { session, user } = await auth.validateSessionToken(sessionToken);
-// 	if (session) {
-// 		auth.setSessionTokenCookie(event, sessionToken, session.expiresAt);
-// 	} else {
-// 		auth.deleteSessionTokenCookie(event);
-// 	}
-
-// 	event.locals.user = user;
-// 	event.locals.session = session;
-
-// 	return resolve(event);
-// };
-
-// export const handle: Handle = handleAuth;
