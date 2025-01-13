@@ -25,7 +25,7 @@ export const handleAuth: Handle = async ({ event, resolve }) => {
 }
 
 export const handleRoutePermissions: Handle = async ({ event, resolve }) => {
-	const userId = String(event.locals?.user?.id); // Get the user ID from the request context
+	const userId = event.locals?.user?.id; // Get the user ID from the request context
 	const route = event.url.pathname;    // Get the requested route
 
 	if (!userId) {
@@ -34,6 +34,8 @@ export const handleRoutePermissions: Handle = async ({ event, resolve }) => {
 
 	// Check if the route has a permission requirement
 	if (ROUTE_PERMISSIONS[route]) {
+		console.log(`Checking permission for route: ${route}`);
+		console.log(`Request permission for route '${route}' is: ${USER_PERMISSIONS[userId]}`);
 		const requiredPermission = ROUTE_PERMISSIONS[route];
 		const userPermission = USER_PERMISSIONS[userId] || 0; // Default to 0 if not found
 
