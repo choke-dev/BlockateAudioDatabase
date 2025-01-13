@@ -7,10 +7,11 @@ export const MAX_SEARCH_RESULTS_PER_PAGE = 50;
 // If true, will only allow users in USER_PERMISSIONS to login and access the dashboard.
 export const ENFORCE_LOGIN_WHITELIST = true;
 export const ROUTE_PERMISSIONS: Record<string, number> = {
-	'/dashboard': 1
+	'/dashboard': 1,
+    '/api/dashboard': 1
 };
 export const USER_PERMISSIONS: Record<string, number> = {
-    "113657695": 2,
-    "144121138": 2,
-    "4885174786": 2
+    "113657695": 1,
+    "144121138": 1,
+    "4885174786": 1
 };
