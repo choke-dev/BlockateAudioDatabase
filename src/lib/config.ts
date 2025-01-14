@@ -2,7 +2,7 @@ const MODE = import.meta.env.MODE;
 export const BASE_URL = MODE === 'development' ? 'http://localhost:5173' : 'https://blockateaudiodb.choke.dev';
 export const ROBLOX_CLIENT_ID = "7919966279299549540";
 
-export const MAX_SEARCH_RESULTS_PER_PAGE = 50;
+export const MAX_SEARCH_RESULTS_PER_PAGE = 25;
 
 // If true, will only allow users in USER_PERMISSIONS to login and access the dashboard.
 export const ENFORCE_LOGIN_WHITELIST = true;
