@@ -1,8 +1,9 @@
 import { MAX_SEARCH_RESULTS_PER_PAGE } from "$lib/config";
 import { prisma } from "$lib/server/db";
+import { SearchFilterSchema } from "$lib/zodSchemas";
 import type { RequestHandler } from "./$types";
 
-export const GET: RequestHandler = async ({ url }) => {
+export const POST: RequestHandler = async ({ url, request }) => {
     try {
         // Check for missing 'keyword' query parameter
         if (!url.searchParams.has('keyword')) {
@@ -33,17 +34,33 @@ export const GET: RequestHandler = async ({ url }) => {
             );
         }
 
-        // Fetch results based on the keyword and pagination
+        const parsedRequestBody = await request.json();
+        const requestBody = SearchFilterSchema.safeParse(parsedRequestBody);
+        const parsedFilters = requestBody.success ? parsedRequestBody : [];
+        
+        //@ts-ignore
+        const filterConditions = parsedFilters.map(filter => {
+            return {
+                [filter.value]: {
+                    contains: filter.inputValue,
+                    mode: 'insensitive',
+                },
+            };
+        });
+
         const audios = await prisma.audio.findMany({
             where: {
                 name: {
                     contains: query!,
                     mode: 'insensitive',
                 },
+                AND: filterConditions
             },
             skip: (currentPage - 1) * MAX_SEARCH_RESULTS_PER_PAGE,
             take: MAX_SEARCH_RESULTS_PER_PAGE,
         });
+
+        
 
         // Fetch total count of audios that match the query
         const total = await prisma.audio.count({
@@ -52,6 +69,7 @@ export const GET: RequestHandler = async ({ url }) => {
                     contains: query!,
                     mode: 'insensitive',
                 },
+                AND: filterConditions
             },
         });
 
