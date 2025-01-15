@@ -18,8 +18,8 @@
 
 	{#if $flash}
 		<div class={`animate-fadeInOut absolute top-[5rem] right-8 rounded-lg ${$flash.type === "success" ? "bg-[#02311b]" : "bg-[#3b0703]"}`}>
-			<div class={`flex items-center justify-start p-4 font-poppins ${$flash.type === "success" ? "text-[#8feab7]" : "text-[#fab4af]"}`}>
-				<div class="mr-4"> {#if $flash.type == "success"} <LucideCircleCheck /> {:else} <LucideCircleAlert /> {/if} </div>
+			<div class={`flex p-4 font-poppins ${$flash.type === "success" ? "text-[#8feab7]" : "text-[#fab4af]"}`}>
+				<div class="mr-3"> {#if $flash.type == "success"} <LucideCircleCheck class="h-6" /> {:else} <LucideCircleAlert class="h-6" /> {/if} </div>
 				<div>
 					<h1 class="font-bold">{($flash.type as string).charAt(0).toUpperCase() + ($flash.type as string).slice(1)}</h1>
 					<p>{$flash.message}</p>

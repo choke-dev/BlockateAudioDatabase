@@ -1,30 +1,52 @@
 import { MAX_SEARCH_RESULTS_PER_PAGE } from "$lib/config";
+import { RetryAfterRateLimiter } from 'sveltekit-rate-limiter/server';
 import { prisma } from "$lib/server/db";
 import { SearchFilterSchema } from "$lib/zodSchemas";
 import type { RequestHandler } from "./$types";
+import { RATELIMIT_SECRET } from "$env/static/private";
+import { error } from "@sveltejs/kit";
 
-export const POST: RequestHandler = async ({ url, request }) => {
+export const limiter = new RetryAfterRateLimiter({
+    IP: [1, 's'],
+    IPUA: [3, 's'],
+    cookie: {
+      name: 'limiterId',
+      secret: RATELIMIT_SECRET,
+      rate: [5, 's'],
+      preflight: true
+    }
+});
+
+export const POST: RequestHandler = async (event) => {
+    const status = await limiter.check(event);
+    if (status.limited) {
+        return new Response(JSON.stringify({ 
+            errors: [ { message: `You are being rate limited. Please try again after ${status.retryAfter} second${Math.abs(status.retryAfter) === 1 ? '' : 's'}.` } ] }),
+            { status: 429 }
+        )
+    }
+
     try {
         // Check for missing 'keyword' query parameter
-        if (!url.searchParams.has('keyword')) {
+        if (!event.url.searchParams.has('keyword')) {
             return new Response(
                 JSON.stringify({ errors: [{ message: 'Missing "keyword" query parameter' }] }),
                 { status: 400 }
             );
         }
 
-        const query = url.searchParams.get('keyword');
+        const query = event.url.searchParams.get('keyword');
         
         // Check for empty 'keyword' parameter
-        if (query && query.length === 0) {
-            return new Response(
-                JSON.stringify({ errors: [{ message: 'Query parameter "keyword" is empty' }] }),
-                { status: 400 }
-            );
-        }
+        // if (query && query.length === 0) {
+        //     return new Response(
+        //         JSON.stringify({ errors: [{ message: 'Query parameter "keyword" is empty' }] }),
+        //         { status: 400 }
+        //     );
+        // }
 
         // Fetch paginated audios from the database
-        const pageParam = url.searchParams.get('page');
+        const pageParam = event.url.searchParams.get('page');
         const currentPage = pageParam ? Number(pageParam) : 1;
 
         if (isNaN(currentPage) || currentPage < 1) {
@@ -34,15 +56,15 @@ export const POST: RequestHandler = async ({ url, request }) => {
             );
         }
 
-        const parsedRequestBody = await request.json();
+        const parsedRequestBody = await event.request.json();
         const requestBody = SearchFilterSchema.safeParse(parsedRequestBody);
         const parsedFilters = requestBody.success ? parsedRequestBody : [];
-        
+
         //@ts-ignore
-        const filterConditions = parsedFilters.map(filter => {
+        const filterConditions = parsedFilters.map(({ label, value, inputValue }: { label: string, filter: string, inputValue: string }) => {
             return {
-                [filter.value]: {
-                    contains: filter.inputValue,
+                [value]: {
+                    contains: inputValue,
                     mode: 'insensitive',
                 },
             };
@@ -50,10 +72,10 @@ export const POST: RequestHandler = async ({ url, request }) => {
 
         const audios = await prisma.audio.findMany({
             where: {
-                name: {
-                    contains: query!,
+                name: query ? {
+                    contains: query,
                     mode: 'insensitive',
-                },
+                } : undefined,
                 AND: filterConditions
             },
             skip: (currentPage - 1) * MAX_SEARCH_RESULTS_PER_PAGE,
