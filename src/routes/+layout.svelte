@@ -17,7 +17,7 @@
 <header class="flex flex-col min-h-screen z-50">
 
 	{#if $flash}
-		<div class={`animate-fadeInOut absolute top-[5rem] right-8 rounded-lg ${$flash.type === "success" ? "bg-[#02311b]" : "bg-[#3b0703]"}`}>
+		<div class={`z-[99] animate-fadeInOut absolute top-[5rem] right-8 rounded-lg ${$flash.type === "success" ? "bg-[#02311b]" : "bg-[#3b0703]"}`}>
 			<div class={`flex p-4 font-poppins ${$flash.type === "success" ? "text-[#8feab7]" : "text-[#fab4af]"}`}>
 				<div class="mr-3"> {#if $flash.type == "success"} <LucideCircleCheck class="h-6" /> {:else} <LucideCircleAlert class="h-6" /> {/if} </div>
 				<div>

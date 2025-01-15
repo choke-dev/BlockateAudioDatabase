@@ -9,11 +9,12 @@ datasource db {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model Audio {
-  id             String @id
-  name           String
-  category       String
+  id                String @id // never use bigint on this
+  name              String
+  category          String
   whitelisterName   String
   whitelisterUserId BigInt
+  created_at        DateTime @default(now())
 }
 
 model State {
@@ -37,15 +38,22 @@ model Token {
 }
 
 model User {
-  id                 String    @id
-  name               String
-  nickname           String
-  picture            String?
-  preferred_username String
-  profile            String
-  created_at         BigInt
-  sessions           Session[]
-  tokens             Token[]
+  id           String   @id
+  username     String
+  global_name  String
+  avatar       String
+  bot          String?
+  system       String?
+  mfa_enabled  Boolean?
+  banner       String?
+  accent_color BigInt?
+  locale       String?
+  flags        BigInt?
+  premium_type BigInt?
+  public_flags BigInt?
+
+  sessions Session[]
+  tokens   Token[]
 }
 
 model Session {
