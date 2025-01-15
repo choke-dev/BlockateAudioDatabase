@@ -8,11 +8,10 @@
 	import Button from "../button/button.svelte";
     import LucidePlus from '~icons/lucide/plus';
     import LucideX from '~icons/lucide/x';
-	import { createEventDispatcher } from "svelte";
 
     const availableFilters = [
         { label: "Category", value: "category", inputValue: "" },
-        { label: "Whitelister", value: "uploaderName", inputValue: "" },
+        { label: "Whitelister", value: "whitelisterName", inputValue: "" },
     ];
 
     // State for the filters

@@ -130,9 +130,9 @@
 						<Table.Head class="text-right">
 							<a
 								class="underline underline-offset-2 transition-colors duration-200 hover:text-white"
-								href={`https://www.roblox.com/users/${audio.uploaderUserId}/profile`}
+								href={`https://www.roblox.com/users/${audio.whitelisterUserId}/profile`}
 							>
-								{audio.uploaderName}
+								{audio.whitelisterName}
 							</a>
 						</Table.Head>
 					</Table.Row>

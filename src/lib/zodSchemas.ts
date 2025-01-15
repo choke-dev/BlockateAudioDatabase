@@ -4,8 +4,8 @@ export const AudioSchema = z.object({
     id: z.string(),
     name: z.string(),
     category: z.string(),
-    uploaderName: z.string(),
-    uploaderUserId: z.string(),
+    whitelisterName: z.string(),
+    whitelisterUserId: z.string(),
 })
 
 export const BatchPatchAudioSchema = z.record(

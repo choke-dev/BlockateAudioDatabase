@@ -12,8 +12,8 @@ model Audio {
   id             String @id
   name           String
   category       String
-  uploaderName   String
-  uploaderUserId BigInt
+  whitelisterName   String
+  whitelisterUserId BigInt
 }
 
 model State {

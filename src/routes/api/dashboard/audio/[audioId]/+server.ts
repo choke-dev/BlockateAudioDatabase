@@ -43,8 +43,8 @@ export const PATCH = async ({ request, params }) => {
         data: {
             name: parsedRequest.name,
             category: parsedRequest.category,
-            uploaderName: parsedRequest.uploaderName,
-            uploaderUserId: parsedRequest.uploaderUserId
+            whitelisterName: parsedRequest.whitelisterName,
+            whitelisterUserId: parsedRequest.whitelisterUserId
         }
     }).catch (error => {
         if (error instanceof PrismaClientKnownRequestError) {
