@@ -1,5 +1,7 @@
 const MODE = import.meta.env.MODE;
 export const BASE_URL = MODE === 'development' ? 'http://localhost:5173' : 'https://blockateaudiodb.choke.dev';
+
+export const DISCORD_CLIENT_ID = "1327153407286579270";
 export const ROBLOX_CLIENT_ID = "7919966279299549540";
 
 export const MAX_SEARCH_RESULTS_PER_PAGE = 25;
@@ -11,7 +13,7 @@ export const ROUTE_PERMISSIONS: Record<string, number> = {
     '/api/dashboard': 1
 };
 export const USER_PERMISSIONS: Record<string, number> = {
-    "113657695": 1,
-    "144121138": 1,
-    "4885174786": 1
+    "208876506146013185": 1,
+    "1096213302654275594": 1,
+    "1228943796251791360": 1
 };
