@@ -22,7 +22,7 @@ export const load: PageServerLoad = async (event) => {
     if (!success || info instanceof Error) throw error(400, (info as Error).message || "Failed to validate authorization code");
     
     if (ENFORCE_LOGIN_WHITELIST) {
-        if (!USER_PERMISSIONS[info.userInfo.sub as string]) {
+        if (!USER_PERMISSIONS[info.userInfo.id as string]) {
             throw redirect(302, '/', { type: "error", message: "You are not authorized to log in." }, event);
         }
     }
@@ -30,7 +30,7 @@ export const load: PageServerLoad = async (event) => {
     const randomBytes = Array.from(crypto.getRandomValues(new Uint8Array(32)));
     const randomString = randomBytes.map(byte => byte.toString(16).padStart(2, '0')).join('');
     const hash = await argon2.hash(randomString);
-    const session = await createSessionToken(info.userInfo.sub as string, hash);
+    const session = await createSessionToken(info.userInfo.id as string, hash);
     event.cookies.set('session', `${session.id}:${randomString}`, { path: '/', sameSite: 'strict', httpOnly: true });
 
     if (info.redirectURI) throw redirect(302, info.redirectURI);

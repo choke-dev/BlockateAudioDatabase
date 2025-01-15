@@ -1,13 +1,13 @@
-import { ROBLOX_CLIENT_SECRET } from '$env/static/private';
-import { ROBLOX_CLIENT_ID, BASE_URL } from '$lib/config';
+import { DISCORD_CLIENT_SECRET } from '$env/static/private';
+import { BASE_URL, DISCORD_CLIENT_ID } from '$lib/config';
 
 import * as arctic from 'arctic';
 import { prisma } from './db';
 
-const roblox = new arctic.Roblox(
-	ROBLOX_CLIENT_ID,
-	ROBLOX_CLIENT_SECRET,
-	`${BASE_URL}/api/oauth/roblox/callback`
+const roblox = new arctic.Discord(
+	DISCORD_CLIENT_ID,
+	DISCORD_CLIENT_SECRET,
+	`${BASE_URL}/api/oauth/discord/callback`
 );
 
 function stringToHex(str: string) {
@@ -29,7 +29,7 @@ function hexToString(hex: string): string | null {
 export async function createAuthorizationURL(state?: string): Promise<{ success: boolean; data: URL | Error }> {
     state = `${arctic.generateState()}${stringToHex(`%E2%80%8B${state}` || '')}`;
 	const codeVerifier = arctic.generateCodeVerifier();
-	const scopes = ['openid', 'profile'];
+	const scopes = ['openid', 'identify'];
 	const url = roblox.createAuthorizationURL(state, codeVerifier, scopes);
 
 	const result = await prisma.state
@@ -76,7 +76,7 @@ export async function validateAuthorizationCode(
             }
         });
         
-        const userInfoResponse = await fetch('https://apis.roblox.com/oauth/v1/userinfo', {
+        const userInfoResponse = await fetch('https://discord.com/api/users/@me', {
             method: 'GET',
             headers: {
                 'Authorization': `${tokenType} ${accessToken}`
@@ -86,24 +86,36 @@ export async function validateAuthorizationCode(
         const userInfo = await userInfoResponse.json();
         await prisma.user.upsert({
             where: {
-                id: userInfo.sub
+                id: userInfo.id
             },
             update: {
-                name: userInfo.name,
-                nickname: userInfo.nickname,
-                preferred_username: userInfo.preferred_username,
-                created_at: userInfo.created_at,
-                profile: userInfo.profile,
-                picture: userInfo.picture
+                username: userInfo.username,
+                global_name: userInfo.global_name,
+                avatar: userInfo.avatar,
+                bot: userInfo.bot,
+                system: userInfo.system,
+                mfa_enabled: userInfo.mfa_enabled,
+                banner: userInfo.banner,
+                accent_color: userInfo.accent_color,
+                locale: userInfo.locale,
+                flags: userInfo.flags,
+                premium_type: userInfo.premium_type,
+                public_flags: userInfo.public_flags
             },
             create: {
-                id: userInfo.sub,
-                name: userInfo.name,
-                nickname: userInfo.nickname,
-                preferred_username: userInfo.preferred_username,
-                created_at: userInfo.created_at,
-                profile: userInfo.profile,
-                picture: userInfo.picture
+                id: userInfo.id,
+                username: userInfo.username,
+                global_name: userInfo.global_name,
+                avatar: userInfo.avatar,
+                bot: userInfo.bot,
+                system: userInfo.system,
+                mfa_enabled: userInfo.mfa_enabled,
+                banner: userInfo.banner,
+                accent_color: userInfo.accent_color,
+                locale: userInfo.locale,
+                flags: userInfo.flags,
+                premium_type: userInfo.premium_type,
+                public_flags: userInfo.public_flags
             }
         })
         

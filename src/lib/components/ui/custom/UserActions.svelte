@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { Button } from "$lib/components/ui/button";
     import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
+	import type { User } from "@prisma/client";
 
-    let { data } = $props();
+    let { data }: { data: User } = $props();
 
     async function logout() {
-        const response = await fetch('/api/oauth/roblox/logout', { method: 'POST' })
+        const response = await fetch('/api/oauth/discord/logout', { method: 'POST' })
         if (!response.ok) return;
         window.location.href = (await response.json()).data
     }
@@ -14,8 +15,8 @@
 <DropdownMenu.Root>
     <DropdownMenu.Trigger>
         <Button variant="ghost" class="flex items-center"> 
-            <img class="rounded-full w-8" src={data.picture} alt={`${data.name}'s avatar image'`}>
-            { data.nickname.length > 0 ? `${data.nickname} (@${data.preferred_username})` : `@${data.preferred_username}` }
+            <img class="rounded-full w-8" src={`https://cdn.discordapp.com/avatars/${data.id}/${data.avatar}`} alt={`${data.global_name}'s avatar image'`}>
+            { data.global_name } 
         </Button>
     </DropdownMenu.Trigger>
     <DropdownMenu.Content>

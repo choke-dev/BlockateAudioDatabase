@@ -1,5 +1,5 @@
 <script lang="ts">
-    import SimpleIconsRoblox from '~icons/simple-icons/roblox';
+    import LogosDiscordIcon from '~icons/logos/discord-icon';
     import LucideLoaderCircle from '~icons/lucide/loader-circle';
     
 	import { Button } from '$lib/components/ui/button';
@@ -7,7 +7,7 @@
     let loading = $state(false);
     async function login() {
         loading = true;
-        const response = await fetch('/api/oauth/roblox/login', { method: 'POST' })
+        const response = await fetch('/api/oauth/discord/login', { method: 'POST' })
         if (!response.ok) {loading = false;return;}
         window.location.href = (await response.json()).data
         loading = false;
@@ -19,7 +19,7 @@
         {#if loading}
             <LucideLoaderCircle class="animate-spin" />
         {:else}
-            <SimpleIconsRoblox /> Login with Roblox
+            <LogosDiscordIcon /> Login with Discord
         {/if}
     </Button>
 </div>
