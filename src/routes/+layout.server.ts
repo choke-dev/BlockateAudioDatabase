@@ -1,6 +1,6 @@
 import { loadFlash } from 'sveltekit-flash-message/server';
-import { limiter } from './+server';
+import { _limiter } from './+server';
 
 export const load = loadFlash(async (event) => {
-    await limiter.cookieLimiter?.preflight(event);
+    await _limiter.cookieLimiter?.preflight(event);
 });

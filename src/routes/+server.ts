@@ -6,7 +6,7 @@ import type { RequestHandler } from "./$types";
 import { RATELIMIT_SECRET } from "$env/static/private";
 import { error } from "@sveltejs/kit";
 
-export const limiter = new RetryAfterRateLimiter({
+export const _limiter = new RetryAfterRateLimiter({
     IP: [1, 's'],
     IPUA: [3, 's'],
     cookie: {
@@ -18,7 +18,7 @@ export const limiter = new RetryAfterRateLimiter({
 });
 
 export const POST: RequestHandler = async (event) => {
-    const status = await limiter.check(event);
+    const status = await _limiter.check(event);
     if (status.limited) {
         return new Response(JSON.stringify({ 
             errors: [ { message: `You are being rate limited. Please try again after ${status.retryAfter} second${Math.abs(status.retryAfter) === 1 ? '' : 's'}.` } ] }),
