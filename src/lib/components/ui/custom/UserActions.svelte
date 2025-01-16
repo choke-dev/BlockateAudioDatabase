@@ -15,15 +15,15 @@
 <DropdownMenu.Root>
     <DropdownMenu.Trigger>
         <Button variant="ghost" class="flex items-center"> 
-            <img class="rounded-full w-8" src={`https://cdn.discordapp.com/avatars/${data.id}/${data.avatar}`} alt={`${data.global_name}'s avatar image'`}>
-            { data.global_name } 
+            <img class="rounded-full w-8" src={data.avatar ? `https://cdn.discordapp.com/avatars/${data.id}/${data.avatar}` : 'https://cdn.discordapp.com/embed/avatars/0.png'} alt={` `}>
+            { data.username } 
         </Button>
     </DropdownMenu.Trigger>
     <DropdownMenu.Content>
       <DropdownMenu.Group>
         <DropdownMenu.GroupHeading>My Account</DropdownMenu.GroupHeading>
         <DropdownMenu.Separator />
-        <DropdownMenu.Item> <a href="/dashboard">Dashboard</a> </DropdownMenu.Item>
+        <DropdownMenu.Item onclick={() => window.location.href = '/dashboard'}> Dashboard </DropdownMenu.Item>
         <DropdownMenu.Item onclick={logout}>Log out</DropdownMenu.Item>
       </DropdownMenu.Group>
     </DropdownMenu.Content>
