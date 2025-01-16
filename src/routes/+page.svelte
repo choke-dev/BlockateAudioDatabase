@@ -64,8 +64,8 @@
 		const url = new URL(location.href);
 		if (url.searchParams.has('keyword')) {
 			keyword = url.searchParams.get('keyword')!;
-			await handleSearch();
 		}
+		handleSearch();
 	});
 </script>
 
