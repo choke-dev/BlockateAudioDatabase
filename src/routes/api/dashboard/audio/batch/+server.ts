@@ -79,7 +79,7 @@ export const PATCH = async ({ request }) => {
     const updateOperations = await prisma.$transaction(zodResult.data.map(audio => prisma.audio.update(
         { 
             where: { 
-                id: String(audio.id) 
+                id: String(audio.id)
             }, 
             data: {
                 name: audio.name,
@@ -115,9 +115,11 @@ export const DELETE = async ({ request }) => {
     const zodResult = BatchDeleteAudioSchema.safeParse(parsedRequest);
     if (!zodResult.success) return new Response(JSON.stringify({ success: false, data: zodResult.error.errors }), { status: 400 });
 
-    const deleteOperations = Object.entries(zodResult).map(([id]) => prisma.audio.delete({ where: { id } }));
-
-    const results = await prisma.$transaction(deleteOperations).catch(error => {
+    const audios = await prisma.audio.findMany({
+        where: {
+            id: { in: zodResult.data },
+        }
+    }).catch (error => {
         if (error instanceof PrismaClientKnownRequestError) {
             switch (error.code) {
                 case 'P2025':
@@ -130,8 +132,39 @@ export const DELETE = async ({ request }) => {
         if (error instanceof PrismaClientUnknownRequestError) {
             return new Response(JSON.stringify({ success: false, errors: [ { message: error.message, code: 'unknown_error' } ] }), { status: 500 });
         }
-    })
-    if (results instanceof Response) return results;
 
-    return new Response(JSON.stringify({ success: true, data: null }, (key, value) => (typeof value === 'bigint' ? value.toString() : value)), { status: 200 });
+        if (error instanceof PrismaClientValidationError) {
+            return new Response(JSON.stringify({ success: false, errors: [ { message: error.message, code: 'validation_error' } ] }), { status: 500 });
+        }
+    })
+    if (audios instanceof Response) return audios;
+    if (audios && audios.length === 0) return new Response(JSON.stringify({ success: false, errors: [ { message: 'Audio not found', code: 'audio_not_found' } ] }), { status: 400 });
+
+    const deleteOperations = await prisma.audio.deleteMany({
+        where: {
+            id: { in: zodResult.data },
+        }
+    }).catch(error => {
+        if (error instanceof PrismaClientKnownRequestError) {
+            switch (error.code) {
+                case 'P2025':
+                    return new Response(JSON.stringify({ success: false, errors: [ { message: 'Audio not found', code: 'audio_not_found' } ] }), { status: 400 });
+                default:
+                    return new Response(JSON.stringify({ success: false, errors: [ { message: error.message, code: error.code } ] }), { status: 500 });
+            }
+        }
+
+        if (error instanceof PrismaClientUnknownRequestError) {
+            return new Response(JSON.stringify({ success: false, errors: [ { message: error.message, code: 'unknown_error' } ] }), { status: 500 });
+        }
+
+        if (error instanceof PrismaClientValidationError) {
+            return new Response(JSON.stringify({ success: false, errors: [ { message: error.message, code: 'validation_error' } ] }), { status: 500 });
+        }
+
+        return new Response(JSON.stringify({ success: false, errors: [ { message: error.message, code: 'unknown_error' } ] }), { status: 500 });
+    })
+    if (deleteOperations instanceof Response) return deleteOperations;
+
+    return new Response(null, { status: 204 });
 }

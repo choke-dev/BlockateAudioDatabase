@@ -14,7 +14,10 @@ model Audio {
   category          String
   whitelisterName   String
   whitelisterUserId BigInt
-  created_at        DateTime @default(now())
+  
+
+  created_at        DateTime @default(now()) @db.Timestamptz()
+  updated_at        DateTime @default(now()) @db.Timestamptz()
 }
 
 model State {

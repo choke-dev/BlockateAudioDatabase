@@ -76,7 +76,7 @@ export const POST: RequestHandler = async (event) => {
                     contains: query,
                     mode: 'insensitive',
                 } : undefined,
-                AND: filterConditions
+                AND: filterConditions,
             },
             skip: (currentPage - 1) * MAX_SEARCH_RESULTS_PER_PAGE,
             take: MAX_SEARCH_RESULTS_PER_PAGE,
@@ -91,7 +91,7 @@ export const POST: RequestHandler = async (event) => {
                     contains: query!,
                     mode: 'insensitive',
                 },
-                AND: filterConditions
+                AND: filterConditions,
             },
         });
 
