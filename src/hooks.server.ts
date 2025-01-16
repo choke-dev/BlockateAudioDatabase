@@ -31,14 +31,14 @@ export const handleRoutePermissions: Handle = async ({ event, resolve }) => {
 	if (Object.keys(ROUTE_PERMISSIONS).some((key) => route.startsWith(key))) {
 
 		if (!userId) {
-			throw error(401, 'Unauthorized');
+			throw error(401, 'You must be logged in to access this page.');
 		}
 
 		const requiredPermission = Object.entries(ROUTE_PERMISSIONS).find(([key, value]) => route.startsWith(key))?.[1] || 0;
 		const userPermission = USER_PERMISSIONS[userId] || 0;
 
 		if (userPermission < requiredPermission) {
-			throw error(403, 'Forbidden');
+			throw error(403, 'You do not have permission to access this page.');
 		}
 	}
 
