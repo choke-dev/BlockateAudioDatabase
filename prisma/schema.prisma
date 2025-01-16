@@ -40,8 +40,8 @@ model Token {
 model User {
   id           String   @id
   username     String
-  global_name  String
-  avatar       String
+  global_name  String?
+  avatar       String?
   bot          String?
   system       String?
   mfa_enabled  Boolean?

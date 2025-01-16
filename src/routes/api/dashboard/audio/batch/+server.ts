@@ -1,6 +1,33 @@
 import { prisma } from '$lib/server/db';
 import { AudioSchema, BatchDeleteAudioSchema, BatchPatchAudioSchema } from '$lib/zodSchemas.js'
-import { PrismaClientKnownRequestError, PrismaClientUnknownRequestError } from '@prisma/client/runtime/library';
+import { PrismaClientKnownRequestError, PrismaClientUnknownRequestError, PrismaClientValidationError } from '@prisma/client/runtime/library';
+
+export const GET = async ({ url }) => {
+    const audioIds = url.searchParams.get('ids');
+    if (!audioIds) return new Response(JSON.stringify({ success: false, data: "Missing audio ids" }), { status: 400 });
+    const audioIdArray = audioIds.split(',');
+    if (audioIdArray.length === 0) return new Response(JSON.stringify({ success: false, data: "Missing audio ids" }), { status: 400 });
+
+    const audios = await prisma.audio.findMany({ where: { id: { in: audioIdArray } } }).catch (error => {
+        if (error instanceof PrismaClientKnownRequestError) {
+            switch (error.code) {
+                case 'P2025':
+                    return new Response(JSON.stringify({ success: false, errors: [ { message: 'Audio not found', code: 'audio_not_found' } ] }), { status: 400 });
+                default:
+                    return new Response(JSON.stringify({ success: false, errors: [ { message: error.message, code: error.code } ] }), { status: 500 });
+            }
+        }
+
+        if (error instanceof PrismaClientUnknownRequestError) {
+            return new Response(JSON.stringify({ success: false, errors: [ { message: error.message, code: 'unknown_error' } ] }), { status: 500 });
+        }
+    })
+
+    if (audios instanceof Response) return audios;
+
+    return new Response(JSON.stringify({ success: true, data: audios }, (key, value) => (typeof value === 'bigint' ? value.toString() : value)), { status: 200 })        
+
+}
 
 export const POST = async ({ request }) => {
     let parsedRequest;
@@ -9,7 +36,16 @@ export const POST = async ({ request }) => {
     const zodResult = AudioSchema.array().safeParse(parsedRequest);
     if (!zodResult.success) return new Response(JSON.stringify({ success: false, data: zodResult.error.errors }), { status: 400 });
 
-    const newAudios = await prisma.audio.createMany({ data: parsedRequest }).catch (error => {
+    //@ts-ignore
+    const parsedAudioBatchAdd = parsedRequest.map(audio => ({
+        id: parseInt(audio.id, 10).toString(),
+        name: audio.name,
+        category: audio.category,
+        whitelisterName: audio.whitelisterName,
+        whitelisterUserId: parseInt(audio.whitelisterUserId, 10).toString()
+    }));
+    
+    const newAudios = await prisma.audio.createMany({ data: parsedAudioBatchAdd }).catch (error => {
         if (error instanceof PrismaClientKnownRequestError) {
             switch (error.code) {
                 case 'P2002':
@@ -22,6 +58,10 @@ export const POST = async ({ request }) => {
         if (error instanceof PrismaClientUnknownRequestError) {
             return new Response(JSON.stringify({ success: false, errors: [ { message: error.message, code: 'unknown_error' } ] }), { status: 500 });
         }
+
+        if (error instanceof PrismaClientValidationError) {
+            return new Response(JSON.stringify({ success: false, errors: [ { message: error.message, code: 'validation_error' } ] }), { status: 500 });
+        }
     })
 
     if (newAudios instanceof Response) return newAudios;
@@ -33,17 +73,22 @@ export const PATCH = async ({ request }) => {
     let parsedRequest;
     try { parsedRequest = JSON.parse( await request.text() ); } catch (error) { return new Response(JSON.stringify({ success: false, data: "Invalid JSON" }), { status: 400 }); }
 
-    const zodResult = BatchPatchAudioSchema.safeParse(parsedRequest);
+    const zodResult = AudioSchema.array().safeParse(parsedRequest);
     if (!zodResult.success) return new Response(JSON.stringify({ success: false, data: zodResult.error.errors }), { status: 400 });
 
-    const updateOperations = Object.entries(zodResult).map(([id, data]) =>
-        prisma.audio.update({
-          where: { id },
-          data,
+    const updateOperations = await prisma.$transaction(zodResult.data.map(audio => prisma.audio.update(
+        { 
+            where: { 
+                id: String(audio.id) 
+            }, 
+            data: {
+                name: audio.name,
+                category: audio.category,
+                whitelisterName: audio.whitelisterName,
+                whitelisterUserId: audio.whitelisterUserId
+            } 
         })
-    );
-  
-    const results = await prisma.$transaction(updateOperations).catch(error => {
+    )).catch (error => {
         if (error instanceof PrismaClientKnownRequestError) {
             switch (error.code) {
                 case 'P2025':
@@ -52,12 +97,13 @@ export const PATCH = async ({ request }) => {
                     return new Response(JSON.stringify({ success: false, errors: [ { message: error.message, code: error.code } ] }), { status: 500 });
             }
         }
-        
+
         if (error instanceof PrismaClientUnknownRequestError) {
             return new Response(JSON.stringify({ success: false, errors: [ { message: error.message, code: 'unknown_error' } ] }), { status: 500 });
         }
     })
-    if (results instanceof Response) return results;
+
+    if (updateOperations instanceof Response) return updateOperations;
 
     return new Response(JSON.stringify({ success: true, data: null }, (key, value) => (typeof value === 'bigint' ? value.toString() : value)), { status: 200 });
 }

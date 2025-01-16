@@ -7,7 +7,7 @@ export const ROBLOX_CLIENT_ID = "7919966279299549540";
 export const MAX_SEARCH_RESULTS_PER_PAGE = 25;
 
 // If true, will only allow users in USER_PERMISSIONS to login and access the dashboard.
-export const ENFORCE_LOGIN_WHITELIST = true;
+export const ENFORCE_LOGIN_WHITELIST = false;
 export const ROUTE_PERMISSIONS: Record<string, number> = {
 	'/dashboard': 1,
     '/api/dashboard': 1

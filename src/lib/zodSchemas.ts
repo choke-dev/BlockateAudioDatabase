@@ -1,11 +1,11 @@
 import { z } from "zod";
 
 export const AudioSchema = z.object({
-    id: z.string(),
+    id: z.number(),
     name: z.string(),
     category: z.string(),
     whitelisterName: z.string(),
-    whitelisterUserId: z.string(),
+    whitelisterUserId: z.number(),
 })
 
 export const BatchPatchAudioSchema = z.record(

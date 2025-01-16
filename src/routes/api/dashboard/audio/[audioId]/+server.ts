@@ -10,7 +10,7 @@ export const GET: RequestHandler = async ({ params }) => {
         if (error instanceof PrismaClientKnownRequestError) {
             switch (error.code) {
                 case 'P2025':
-                    return new Response(JSON.stringify({ success: false, errors: [ { message: 'Audio not found', code: 'audio_not_found' } ] }), { status: 400 });
+                    return new Response(JSON.stringify({ success: false, errors: [ { message: 'Audio not found', code: 'audio_not_found' } ] }), { status: 404 });
                 default:
                     return new Response(JSON.stringify({ success: false, errors: [ { message: error.message, code: error.code } ] }), { status: 500 });
             }
