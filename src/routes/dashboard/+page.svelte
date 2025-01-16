@@ -1,8 +1,11 @@
 <script lang="ts">
     import type { PageData } from "./$types";
-	import DatabaseManagementActions from "$lib/components/ui/custom/DatabaseManagementActions.svelte";
+	import DatabaseManagementActions from "$lib/components/ui/custom/dashboard/DatabaseManagementActions.svelte";
+	import RequestAudioWhitelist from "$lib/components/ui/custom/dashboard/RequestAudioWhitelist.svelte";
 
     let { data }: { data: PageData } = $props();
+
+    console.log(data)
 </script>
 
 <svelte:head>
@@ -16,7 +19,14 @@
             <p class="mt-2 text-neutral-700 font-poppins">What would you like to do today?</p>
         </div>
         
-        <DatabaseManagementActions />
+        {#if data.permissionLevel >= 2}
+            <div class="p-5 border rounded-lg mt-6 relative">
+                <h1 class="absolute -top-4 left-4 bg-background p-1 rounded">Database Management</h1>
+                <DatabaseManagementActions />
+            </div>
+        {/if}
+
+        <RequestAudioWhitelist />
         
     </div>
 </div>

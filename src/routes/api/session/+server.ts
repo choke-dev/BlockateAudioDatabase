@@ -1,3 +1,4 @@
+import { USER_PERMISSIONS } from "$lib/config";
 import type { RequestHandler } from "@sveltejs/kit";
 
 export const GET: RequestHandler = async ({ locals }) => {
@@ -6,7 +7,7 @@ export const GET: RequestHandler = async ({ locals }) => {
             typeof value === 'bigint' ? value.toString() : value;
 
         return new Response(
-            JSON.stringify({ success: true, data: locals.user }, replacer), 
+            JSON.stringify({ success: true, data: { ...locals.user, permissionLevel: USER_PERMISSIONS[locals.user.id] || 0 } }, replacer), 
             { status: 200, headers: { 'Content-Type': 'application/json' } }
         );
     }

@@ -182,7 +182,7 @@
     };
 </script>
 
-<div class="mt-4 max-w-full">
+<div>
     <Dialog.Root>
         <Dialog.Trigger class={buttonVariants({ variant: "default" })}>
             <LucideSquarePlus /> Add audio
