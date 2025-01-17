@@ -21,7 +21,7 @@
         
         {#if data.permissionLevel >= 2}
             <div class="p-5 border rounded-lg mt-6 relative">
-                <h1 class="absolute -top-4 left-4 bg-background p-1 rounded">Database Management</h1>
+                <h1 class="absolute -top-4 left-4 p-1 rounded"><span class="bg-background px-1">Database Management</span></h1>
                 <DatabaseManagementActions />
             </div>
         {/if}
