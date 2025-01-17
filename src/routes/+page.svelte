@@ -30,6 +30,10 @@
 		loading = true;
         errors = []
 		searchResults = [];
+		if (event && event.target instanceof HTMLFormElement) {
+			const formData = new FormData(event.target as HTMLFormElement);
+			keyword = formData.get('keyword') as string;
+		}
 		const response = await fetch(`/?keyword=${encodeURIComponent(keyword)}&page=${currentPage}`, {
 			method: 'POST',
 			body: JSON.stringify(filters)
