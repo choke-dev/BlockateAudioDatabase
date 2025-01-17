@@ -1,5 +1,6 @@
 import { prisma } from '$lib/server/db';
 import { AudioSchema, BatchDeleteAudioSchema, BatchPatchAudioSchema } from '$lib/zodSchemas.js'
+import type { Audio } from '@prisma/client';
 import { PrismaClientKnownRequestError, PrismaClientUnknownRequestError, PrismaClientValidationError } from '@prisma/client/runtime/library';
 
 export const GET = async ({ url }) => {
@@ -44,6 +45,21 @@ export const POST = async ({ request }) => {
         whitelisterName: audio.whitelisterName,
         whitelisterUserId: parseInt(audio.whitelisterUserId, 10).toString()
     }));
+
+    // Find existing rows
+    const existingRows = await prisma.audio.findMany({
+      where: {
+        id: { in: parsedAudioBatchAdd.map((item: Audio) => item.id) },
+      },
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+    
+    if (existingRows.length > 0) {
+        return new Response(JSON.stringify({ success: false, errors: [ { message: 'Audio already exists', code: 'audio_already_exists', items: existingRows } ] }), { status: 400 });
+    }
     
     const newAudios = await prisma.audio.createMany({ data: parsedAudioBatchAdd }).catch (error => {
         if (error instanceof PrismaClientKnownRequestError) {

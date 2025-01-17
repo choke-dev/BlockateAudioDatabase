@@ -15,7 +15,7 @@
     
     const flash = getFlash(page);
     let audioBatchAdd = writable([
-    { id: '', name: '', category: '', whitelisterName: '', whitelisterUserId: '' }
+    { id: '', name: '', category: '', whitelisterName: '', whitelisterUserId: '', hasError: false }
     ]);
     let audioBatchEdit = writable([
     { id: '', name: '', category: '', whitelisterName: '', whitelisterUserId: '', fetchedRecord: false }
@@ -31,7 +31,7 @@
     })
     
     const addAudioEntry = () => {
-        audioBatchAdd.update(batch => [...batch, { id: '', name: '', category: '', whitelisterName: '', whitelisterUserId: '' }]);
+        audioBatchAdd.update(batch => [...batch, { id: '', name: '', category: '', whitelisterName: '', whitelisterUserId: '', hasError: false }]);
     };
     
     const removeAudioEntry = (index: number) => {
@@ -57,9 +57,9 @@
                 return;
             }
             const audioDetails = await response.json();
-            audioBatchEdit.update(batch => {
+            audioBatchAdd.update(batch => {
                 batch[index] = audioDetails.data;
-                batch[index].fetchedRecord = true;
+                batch[index].hasError = true;
                 return batch;
             });
         } catch (error) {
@@ -69,6 +69,8 @@
     };
     
     const submitBatchAdd = async () => {
+        console.log("hi")
+        if (loading.add) return;
         const validateIds = $audioBatchAdd.every(audio => {
             const idValid = typeof parseInt(audio.id, 10) === 'number' && parseInt(audio.id, 10) > 0;
             const whitelisterUserIdValid = typeof parseInt(audio.whitelisterUserId, 10) === 'number' && parseInt(audio.whitelisterUserId, 10) > 0;
@@ -78,9 +80,9 @@
             }
             return true;
         });
-        if (!$audioBatchAdd.length || !$audioBatchAdd.every(audio => Object.values(audio).every(value => !!value)) || !validateIds) return;
+        if (!$audioBatchAdd.length) return;
+        if (!validateIds) return;
         
-        loading.add = true;
         
         const parsedAudioBatchAdd = $audioBatchAdd.map(audio => ({
             id: parseInt(audio.id, 10),
@@ -89,6 +91,14 @@
             whitelisterName: audio.whitelisterName,
             whitelisterUserId: parseInt(audio.whitelisterUserId, 10)
         }));
+        if (parsedAudioBatchAdd.every(audio => Object.values(audio).some(value => value === ''))) {
+            audioBatchAdd.update(batch => batch.map(audio => ({ ...audio, hasError: true })));
+            $flash = { type: "error", message: `Found an empty field in one of the audio entries.` };
+            loading.add = false;
+            return;
+        }
+
+        loading.add = true;
         
         const response = await fetch('/api/dashboard/audio/batch', {
             method: 'POST',
@@ -97,6 +107,18 @@
         });
         if (!response.ok) {
             const responseErrorData = await response.json();
+
+            if (responseErrorData.errors[0].code === "audio_already_exists") {
+                //@ts-ignore
+                // responseErrorData.errors[0].items = { id: string, name: string }[]
+                audioBatchAdd.update(batch => batch.map(audio => ({ ...audio, hasError: responseErrorData.errors[0].items.find(item => item.id === audio.id) ? true : false })));
+                
+                $flash = { type: "error", message: `Found ${responseErrorData.errors[0].items.length} audio${responseErrorData.errors[0].items.length === 1 ? '' : 's'} that already exist in the database` };
+
+                loading.add = false;
+                return;
+            }
+
             $flash = { type: "error", message: `Failed to add ${parsedAudioBatchAdd.length} audio${Math.abs(parsedAudioBatchAdd.length) === 1 ? '' : 's'} to the database: ${responseErrorData.errors[0].message}` };
             loading.add = false;
             return;
@@ -104,7 +126,7 @@
         
         const responseData = await response.json();
         loading.add = false;
-        audioBatchAdd.set([{ id: '', name: '', category: '', whitelisterName: '', whitelisterUserId: '' }]);
+        audioBatchAdd.set([{ id: '', name: '', category: '', whitelisterName: '', whitelisterUserId: '', hasError: false }]);
         $flash = { type: "success", message: `Added ${responseData.data.count} audio${responseData.data.count === 1 ? '' : 's'} to the database.` };
     };
     
@@ -194,7 +216,7 @@
             </Dialog.Header>
             <div class="space-y-4">
                 {#each $audioBatchAdd as audio, index}
-                <div class="flex items-center space-x-2">
+                <div class={`flex items-center space-x-2 ${audio.hasError ? 'border p-2 rounded-lg border-red-800' : ''}`}>
                     <Input required={true} bind:value={audio.id} placeholder="ID" />
                     <Input required={true} bind:value={audio.name} placeholder="Name" />
                     <Input required={true} bind:value={audio.category} placeholder="Category" />
