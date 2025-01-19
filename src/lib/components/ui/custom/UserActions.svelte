@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Button } from "$lib/components/ui/button";
+	import { Button, buttonVariants } from "$lib/components/ui/button";
     import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
 	import type { User } from "@prisma/client";
 
@@ -13,11 +13,9 @@
 </script>
 
 <DropdownMenu.Root>
-    <DropdownMenu.Trigger>
-        <Button variant="ghost" class="flex items-center"> 
-            <img class="rounded-full w-8" src={data.avatar ? `https://cdn.discordapp.com/avatars/${data.id}/${data.avatar}` : 'https://cdn.discordapp.com/embed/avatars/0.png'} alt={` `}>
-            { data.username } 
-        </Button>
+    <DropdownMenu.Trigger class={`flex items-center ${buttonVariants({ variant: "ghost", size: "sm" })}`}>
+        <img class="rounded-full w-8" src={data.avatar ? `https://cdn.discordapp.com/avatars/${data.id}/${data.avatar}` : 'https://cdn.discordapp.com/embed/avatars/0png'} alt={` `}>
+        { data.username } 
     </DropdownMenu.Trigger>
     <DropdownMenu.Content>
       <DropdownMenu.Group>
