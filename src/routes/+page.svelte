@@ -66,8 +66,9 @@
 
 	onMount(async () => {
 		const url = new URL(location.href);
-		if (url.searchParams.has('keyword')) {
-			keyword = url.searchParams.get('keyword')!;
+		const keywordParam = url.searchParams.get('keyword');
+		if (keywordParam !== null && keywordParam.length > 0) {
+			keyword = keywordParam;
 		}
 		handleSearch();
 	});
