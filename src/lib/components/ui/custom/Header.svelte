@@ -1,14 +1,11 @@
 <script lang="ts">
+  import UserActions from "$lib/components/ui/custom/UserActions.svelte";
+  import { Separator } from "$lib/components/ui/separator/index";
   import * as Sheet from "$lib/components/ui/sheet/index.js";
-  import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
-  import { Button } from "$lib/components/ui/button";
-
-	import UserActions from "$lib/components/ui/custom/UserActions.svelte";
-  
-  // Icons
+// Icons
   import LucideMenu from '~icons/lucide/menu';
-	import LoginWithProvider from "./LoginWithProvider.svelte";
-	import { page } from "$app/state";
+  import LoginWithProvider from "./LoginWithProvider.svelte";
+  import SocialLinks from "./SocialLinks.svelte";
 
   const getUserSession = async (): Promise<{ success: boolean; data: any }> => {
     return await fetch("/api/session", { credentials: "same-origin" }).then((response) => response.json()).catch(() => ({ success: false, data: null }));
@@ -40,6 +37,8 @@
 
     <div class="flex items-center">
       <div class="hidden md:flex gap-x-3">
+        <SocialLinks class="mr-2" />
+
         {#await getUserSession()}
           <!--  -->
         {:then userSession}
@@ -57,6 +56,8 @@
           <Sheet.Header />
 
           <div class="flex flex-col gap-y-2 items-center">
+            <SocialLinks />
+            <Separator class="my-2" />
             {#await getUserSession()}
               <!--  -->
             {:then userSession}
