@@ -36,8 +36,10 @@
     </div>
 
     <div class="flex items-center">
-      <div class="hidden md:flex gap-x-3">
+      <div class="hidden md:flex items-center gap-x-3">
         <SocialLinks class="mr-2" />
+
+        <div class="border-l h-8"></div>
 
         {#await getUserSession()}
           <!--  -->
