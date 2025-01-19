@@ -13,7 +13,7 @@
 </script>
 
 <DropdownMenu.Root>
-    <DropdownMenu.Trigger class={`flex items-center ${buttonVariants({ variant: "ghost", size: "sm" })}`}>
+    <DropdownMenu.Trigger class={`flex items-center w-full ${buttonVariants({ variant: "ghost" })}`}>
         <img class="rounded-full w-8" src={data.avatar ? `https://cdn.discordapp.com/avatars/${data.id}/${data.avatar}` : 'https://cdn.discordapp.com/embed/avatars/0png'} alt={` `}>
         { data.username } 
     </DropdownMenu.Trigger>
