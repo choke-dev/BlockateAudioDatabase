@@ -1,0 +1,49 @@
+{
+    "name": "Blockate Audio Database",
+    "short_name": "Blockate Audio Database",
+    "start_url": "/",
+    "display": "standalone",
+    "display_override": ["window-controls-overlay", "fullscreen", "minimal-ui"],
+    "description": "An application to search through and manage whitelisted audio IDs on Blockate",
+    "lang": "en",
+    "dir": "auto",
+    "theme_color": "#09090b",
+    "background_color": "#09090b",
+    "orientation": "any",
+    "icons": [
+        {
+            "src": "https://blockateaudiodb.choke.dev/BlockateAudioDatabaseLogo.png",
+            "sizes": "768x768",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "https://blockateaudiodb.choke.dev/BlockateAudioDatabaseLogo.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        }
+    ],
+    "screenshots": [
+        {
+            "src": "https://github.com/choke-dev/BlockateAudioDatabase/raw/main/assets/homepage.png",
+            "sizes": "1920x1080",
+            "type": "image/png",
+            "description": "A screenshot of the home page"
+        }
+    ],
+    "related_applications": [
+        {
+            "platform": "windows",
+            "url": "https://blockateaudiodb.choke.dev"
+        }
+    ],
+    "prefer_related_applications": false,
+    "shortcuts": [
+        {
+            "name": "Dashboard",
+            "url": "/dashboard",
+            "description": "Go to the dashboard"
+        }
+    ]
+}
