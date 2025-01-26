@@ -19,7 +19,7 @@ export const handleAuth: Handle = async ({ event, resolve }) => {
 		return resolve(event);
 	}
 
-	event.locals.user = data;
+	event.locals.user = {...data, permissionLevel: USER_PERMISSIONS[data.id] || 0};;
 
 	return resolve(event);
 }
