@@ -121,7 +121,7 @@
 		<form onsubmit={handleSearch} class="flex w-full max-w-lg items-center gap-x-2">
 			<div class="flex flex-grow items-center gap-x-2">
 				<div class="flex relative flex-grow">
-					<Input bind:value={keyword} name="keyword" type="search" placeholder="Search..." class="w-full pr-10" />
+					<Input bind:value={keyword} name="keyword" placeholder="Search..." class="w-full pr-10" />
 					{#if lastSearchKeyword.length > 0}
 						<Button 
 						variant="ghost" 
