@@ -20,6 +20,17 @@ model Audio {
   updated_at        DateTime @default(now()) @db.Timestamptz()
 }
 
+model Requests {
+  id        String   @id @default(uuid())
+  userId    String
+  message   String
+
+  createdAt DateTime @default(now())
+
+  User      User     @relation(fields: [userId], references: [id])
+}
+
+// Authentication
 model State {
   id           String   @id @default(uuid())
   state        String
@@ -54,9 +65,10 @@ model User {
   flags        BigInt?
   premium_type BigInt?
   public_flags BigInt?
-
+  
   sessions Session[]
   tokens   Token[]
+  requests Requests[]
 }
 
 model Session {
