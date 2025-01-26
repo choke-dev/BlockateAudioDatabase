@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const AudioSchema = z.object({
-    id: z.number(),
+    id: z.string(),
     name: z.string(),
     category: z.string(),
     whitelisterName: z.string(),
