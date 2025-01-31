@@ -2,10 +2,9 @@
     import type { PageData } from "./$types";
 	import DatabaseManagementActions from "$lib/components/ui/custom/dashboard/DatabaseManagementActions.svelte";
 	import RequestAudioWhitelist from "$lib/components/ui/custom/dashboard/RequestAudioWhitelist.svelte";
+	import ViewAudioWhitelistRequests from "$lib/components/ui/custom/dashboard/ViewAudioWhitelistRequests.svelte";
 
     let { data }: { data: PageData } = $props();
-
-    console.log(data)
 </script>
 
 <svelte:head>
@@ -25,8 +24,6 @@
                 <DatabaseManagementActions />
             </div>
         {/if}
-
-        <RequestAudioWhitelist />
         
     </div>
 </div>
