@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { uploadConfig } from '$lib/config/upload';
-	import Button from '$lib/components/ui/button/button.svelte';
-	import LucideTrash2 from '~icons/lucide/trash-2';
-	import { getFlash } from 'sveltekit-flash-message';
 	import { page } from '$app/state';
+	import Button from '$lib/components/ui/button/button.svelte';
+	import { uploadConfig } from '$lib/config/upload';
+	import { getFlash } from 'sveltekit-flash-message';
+	import LucideTrash2 from '~icons/lucide/trash-2';
 
 	let {
 		onUploadComplete = () => {},
@@ -250,7 +250,7 @@
 							</div>
 						{/if}
 					</div>
-					<Button variant="destructive" size="icon" onclick={() => removeFile(file)}>
+					<Button variant="destructive" size="icon" disabled={uploading} onclick={() => removeFile(file)}>
 						<LucideTrash2 />
 					</Button>
 				</li>
