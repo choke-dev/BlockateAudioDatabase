@@ -4,8 +4,8 @@ import { json, type RequestHandler } from '@sveltejs/kit';
 import { fileTypeFromBuffer } from 'file-type';
 import { existsSync, readdir, readFile, stat, unlink } from 'fs';
 import { appendFile, mkdir, writeFile } from 'fs/promises';
-import { parseBuffer } from 'music-metadata';
 import { join } from 'path';
+import * as musicmetadata from 'music-metadata';
 import { promisify } from 'util';
 
 const MODE = import.meta.env.MODE;
@@ -42,7 +42,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
         }
         
         // Write chunk to temporary file
-        const chunkBuffer = Buffer.from(await chunk.arrayBuffer());
+        const chunkBuffer = new Uint8Array(await chunk.arrayBuffer());
         const tempFilePath = join(TEMP_DIR, `${uploadId}-${chunkIndex}`);
         await writeFile(tempFilePath, chunkBuffer, { encoding: "binary" });
         
@@ -62,11 +62,6 @@ export const POST: RequestHandler = async ({ request, locals }) => {
             if (!fileNameRegex.test(fileName)) {
                 return json({ code: "invalid_file_name", error: 'Invalid file name' }, { status: 400 });
             }
-
-            const audioMetadata = await parseBuffer(Uint8Array.from(chunkBuffer));
-            if ((audioMetadata.format?.duration ?? 999) > uploadConfig.maxAudioDuration) {
-                return json({ error: `Audio duration exceeds maximum allowed duration of ${formatDuration(uploadConfig.maxAudioDuration)}` }, { status: 400 });
-            }
         }
         
         // If this is the last chunk, combine all chunks
@@ -77,7 +72,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
             for (let i = 0; i < totalChunks; i++) {
                 const chunkPath = join(TEMP_DIR, `${uploadId}-${i}`);
                 const chunkContent = await readChunk(chunkPath);
-                await appendFile(finalFilePath, chunkContent, { encoding: "binary" });
+                const chunkContentArray = Uint8Array.from(chunkContent);
+                await appendFile(finalFilePath, chunkContentArray, { encoding: "binary" });
                 
                 unlink(chunkPath, (err) => {
                     if (err) {
@@ -98,10 +94,20 @@ export const POST: RequestHandler = async ({ request, locals }) => {
             });
             
             const fileBuffer = await readFileAsync(finalFilePath);
-            const fileMime = await fileTypeFromBuffer(fileBuffer);
+            const fileMime = await fileTypeFromBuffer(Uint8Array.from(fileBuffer));
 
             if (!fileMime) {
                 return json({ error: 'Unable to detect MIME type' }, { status: 500 });
+            }
+
+            const audioMetadata = await musicmetadata.parseBuffer(Uint8Array.from(fileBuffer), fileMime.mime);
+            if ((audioMetadata.format?.duration ?? 999) > uploadConfig.maxAudioDuration) {
+                unlink(finalFilePath, (err) => {
+                    if (err) {
+                        console.error(`Error deleting chunk file ${finalFilePath}:`, err);
+                    }
+                });
+                return json({ error: `Audio duration exceeds maximum allowed duration of ${formatDuration(uploadConfig.maxAudioDuration)}. The uploaded audio duration is ${formatDuration(audioMetadata.format?.duration ?? 0)}` }, { status: 400 });
             }
 
             const file = new File([fileBuffer], fileName, { type: fileMime.mime });
@@ -166,7 +172,7 @@ function formatFileSize(size: number): string {
 function formatDuration(duration: number): string {
     const hours = Math.floor(duration / 3600);
     const minutes = Math.floor((duration % 3600) / 60);
-    const seconds = duration % 60;
+    const seconds = Math.floor(duration % 60);
     const parts: string[] = [];
     if (hours > 0) parts.push(`${hours} hour${hours === 1 ? '' : 's'}`);
     if (minutes > 0) parts.push(`${minutes} minute${minutes === 1 ? '' : 's'}`);

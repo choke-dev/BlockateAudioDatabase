@@ -64,7 +64,7 @@ async function acceptRequest(event: RequestEvent) {
     if (!fileType) return new Response(JSON.stringify({ success: false, errors: [{ message: 'Unable to detect MIME type', code: 'file_type_detection_failed' }] }), { status: 400 });
 
     const tempFilePath = join(uploadConfig.directories.temp, request.fileName);
-    writeFileSync(tempFilePath, Buffer.from(buffer), "binary");
+    writeFileSync(tempFilePath, Uint8Array.from(buffer), "binary");
 
     try {
         const asset = await AssetsApi.createAsset({
