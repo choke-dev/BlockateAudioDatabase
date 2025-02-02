@@ -1,3 +1,5 @@
+const MODE = import.meta.env.MODE;
+
 export const uploadConfig = {
 	chunkSize: 1024 * 1024 * 1, // 6MB
 
@@ -17,8 +19,8 @@ export const uploadConfig = {
 
 	// Upload directories
 	directories: {
-		uploads: 'uploads',
-		temp: 'uploads/temp'
+		uploads: MODE === 'development' ? 'uploads' : '/tmp/uploads',
+		temp: MODE === 'development' ? 'uploads/temp' : '/tmp/uploads/temp'
 	},
 
 	fileNameRegex: /^(\S.*) --- (\S.*?)(?:\..*)?$/,
