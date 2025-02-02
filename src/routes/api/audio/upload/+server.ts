@@ -2,7 +2,7 @@ import { uploadConfig } from '$lib/config/upload';
 import { prisma, supabase } from '$lib/server/db';
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { fileTypeFromBuffer } from 'file-type';
-import { existsSync, readFile, stat, unlink } from 'fs';
+import { existsSync, readdir, readFile, stat, unlink } from 'fs';
 import { appendFile, mkdir, writeFile } from 'fs/promises';
 import { getAudioDurationInSeconds } from 'get-audio-duration';
 import { join } from 'path';
@@ -21,7 +21,12 @@ const allowedFileTypes = ["audio/mpeg", "audio/ogg", "audio/wav", "audio/flac"];
 const fileNameRegex = /^(\S.*) --- (\S.*?)(?:\..*)?$/
 
 const platform = process.platform;
-const ffprobePath = platform === "linux" ? `${process.cwd()}/src/bin/ffprobe-x64-${platform}-6.1` : undefined;
+console.error(`Current directory: ${process.cwd()}`);
+console.error("Files and directories in directory:")
+for (const file of await promisify(readdir)(UPLOADS_DIR, { withFileTypes: true })) {
+    console.error(`- ${file.name}${file.isDirectory() ? '/' : ''}`);
+}
+const ffprobePath = platform === "linux" ? `bin/ffprobe-x64-${platform}-6.1` : undefined;
 
 export const POST: RequestHandler = async ({ request, locals }) => {
     try {
