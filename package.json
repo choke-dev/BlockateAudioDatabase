@@ -64,6 +64,7 @@
 		"drizzle-orm": "^0.33.0",
 		"file-type": "^20.0.0",
 		"get-audio-duration": "^4.0.1",
+		"music-metadata": "^10.8.2",
 		"openblox": "^1.0.59",
 		"postgres": "^3.4.4",
 		"vercel": "^40.1.0",

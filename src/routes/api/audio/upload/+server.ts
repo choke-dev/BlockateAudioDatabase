@@ -4,7 +4,7 @@ import { json, type RequestHandler } from '@sveltejs/kit';
 import { fileTypeFromBuffer } from 'file-type';
 import { existsSync, readdir, readFile, stat, unlink } from 'fs';
 import { appendFile, mkdir, writeFile } from 'fs/promises';
-import { getAudioDurationInSeconds } from 'get-audio-duration';
+import { parseBuffer } from 'music-metadata';
 import { join } from 'path';
 import { promisify } from 'util';
 
@@ -70,6 +70,11 @@ export const POST: RequestHandler = async ({ request, locals }) => {
             if (!fileNameRegex.test(fileName)) {
                 return json({ code: "invalid_file_name", error: 'Invalid file name' }, { status: 400 });
             }
+
+            const audioMetadata = await parseBuffer(Uint8Array.from(chunkBuffer));
+            if ((audioMetadata.format?.duration ?? 999) > uploadConfig.maxAudioDuration) {
+                return json({ error: `Audio duration exceeds maximum allowed duration of ${formatDuration(uploadConfig.maxAudioDuration)}` }, { status: 400 });
+            }
         }
         
         // If this is the last chunk, combine all chunks
@@ -99,17 +104,6 @@ export const POST: RequestHandler = async ({ request, locals }) => {
                     return json({ error: `File size exceeds maximum allowed size of ${formatFileSize(uploadConfig.maxFileSize)}` }, { status: 400 });
                 }
             });
-
-            
-            const audioDuration = await getAudioDurationInSeconds(finalFilePath, ffprobePath);
-            if (audioDuration > uploadConfig.maxAudioDuration) {
-                unlink(finalFilePath, (err) => {
-                    if (err) {
-                        console.error(`Error deleting chunk file ${finalFilePath}:`, err);
-                    }
-                });
-                return json({ error: `Audio duration exceeds maximum allowed duration of ${formatDuration(uploadConfig.maxAudioDuration)}` }, { status: 400 });
-            }
             
             const fileBuffer = await readFileAsync(finalFilePath);
             const fileMime = await fileTypeFromBuffer(fileBuffer);
