@@ -13,7 +13,6 @@ const MODE = import.meta.env.MODE;
 // Convert callback-based functions to promise-based
 const readFileAsync = promisify(readFile);
 
-const UPLOADS_DIR = MODE === 'development' ? join(process.cwd(), uploadConfig.directories.uploads) : uploadConfig.directories.uploads
 const TEMP_DIR = MODE === 'development' ? join(process.cwd(), uploadConfig.directories.temp) : uploadConfig.directories.temp
 
 // Define allowed MIME types
@@ -32,18 +31,15 @@ export const POST: RequestHandler = async ({ request, locals }) => {
         if (!chunk || !fileName || isNaN(chunkIndex) || isNaN(totalChunks) || !uploadId) {
             return json({ error: 'Invalid upload data' }, { status: 400 });
         }
-        
-        // Create directories if they don't exist
-        if (!existsSync(UPLOADS_DIR)) {
-            await mkdir(UPLOADS_DIR);
-        }
+
         if (!existsSync(TEMP_DIR)) {
+            console.log("Temporary directory does not exist. Creating...");
             await mkdir(TEMP_DIR);
         }
         
         // Write chunk to temporary file
         const chunkBuffer = new Uint8Array(await chunk.arrayBuffer());
-        const tempFilePath = join(TEMP_DIR, `${uploadId}-${chunkIndex}`);
+        const tempFilePath = join(TEMP_DIR, `${uploadId}_${chunkIndex}`);
         await writeFile(tempFilePath, chunkBuffer, { encoding: "binary" });
         
         // Detect MIME type from chunk data
@@ -66,11 +62,11 @@ export const POST: RequestHandler = async ({ request, locals }) => {
         
         // If this is the last chunk, combine all chunks
         if (chunkIndex === totalChunks - 1) {
-            const finalFilePath = join(UPLOADS_DIR, fileName);
+            const finalFilePath = join(TEMP_DIR, fileName);
             
             // Combine all chunks
             for (let i = 0; i < totalChunks; i++) {
-                const chunkPath = join(TEMP_DIR, `${uploadId}-${i}`);
+                const chunkPath = join(TEMP_DIR, `${uploadId}_${i}`);
                 const chunkContent = await readChunk(chunkPath);
                 const chunkContentArray = Uint8Array.from(chunkContent);
                 await appendFile(finalFilePath, chunkContentArray, { encoding: "binary" });

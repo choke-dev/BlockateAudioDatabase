@@ -19,18 +19,18 @@ export const uploadConfig = {
 
 	// Upload directories
 	directories: {
-		uploads: MODE === 'development' ? 'uploads' : '/tmp/uploads',
-		temp: MODE === 'development' ? 'uploads/temp' : '/tmp/uploads/temp'
+		temp: MODE === 'development' ? 'temp' : '/tmp'
 	},
 
 	fileNameRegex: /^(\S.*) --- (\S.*?)(?:\..*)?$/,
 
-  descriptionTemplate: [
-    "Uploaded for audio whitelisting on Blockate.",
-    "",
-    "Audio Name: {audioName}",
-    "Audio Category: {audioCategory}",
-    "",
-    "If you are the copyright owner, or someone on behalf of the copyright owner, and wish to remove the following audio, please contact me."
-  ].join("\n")
+	audioDisplayName: `{audioName}`,
+	descriptionTemplate: [
+		"Uploaded for audio whitelisting on Blockate.",
+		"",
+		"Audio Name: {audioName}",
+		"Audio Category: {audioCategory}",
+		"",
+		"If you are the copyright owner, or someone on behalf of the copyright owner, and wish to remove the following audio, please contact me."
+	].join("\n")
 };
