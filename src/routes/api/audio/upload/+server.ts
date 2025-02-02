@@ -20,14 +20,6 @@ const TEMP_DIR = MODE === 'development' ? join(process.cwd(), uploadConfig.direc
 const allowedFileTypes = ["audio/mpeg", "audio/ogg", "audio/wav", "audio/flac"];
 const fileNameRegex = /^(\S.*) --- (\S.*?)(?:\..*)?$/
 
-const platform = process.platform;
-console.error(`Current directory: ${process.cwd()}`);
-console.error("Files and directories in directory:")
-for (const file of await promisify(readdir)(UPLOADS_DIR, { withFileTypes: true })) {
-    console.error(`- ${file.name}${file.isDirectory() ? '/' : ''}`);
-}
-const ffprobePath = platform === "linux" ? `bin/ffprobe-x64-${platform}-6.1` : undefined;
-
 export const POST: RequestHandler = async ({ request, locals }) => {
     try {
         const formData = await request.formData();
