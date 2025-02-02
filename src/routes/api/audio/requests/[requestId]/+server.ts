@@ -1,3 +1,5 @@
+export const _maxDuration = 60;
+
 import { ROBLOX_CREDENTIALS } from "$env/static/private";
 import { uploadConfig } from "$lib/config/upload";
 import { whitelistAssetToUser } from "$lib/server/audioUploader";
@@ -26,6 +28,7 @@ async function deleteRequest(requestId: string) {
         return { success: false, errors: [{ message: 'An error occurred while deleting the request data.', code: 'error_processing_request' }] };
     }
 }
+
 
 async function acceptRequest(event: RequestEvent) {
     const requestId = event.params.requestId;
