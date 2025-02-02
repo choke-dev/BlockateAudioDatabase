@@ -29,7 +29,6 @@ async function deleteRequest(requestId: string) {
     }
 }
 
-
 async function acceptRequest(event: RequestEvent) {
     const requestId = event.params.requestId;
     const request = await prisma.requests.findUnique({ where: { id: requestId } });
