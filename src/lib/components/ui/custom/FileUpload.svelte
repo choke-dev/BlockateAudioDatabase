@@ -2,6 +2,8 @@
 	import { uploadConfig } from '$lib/config/upload';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import LucideTrash2 from '~icons/lucide/trash-2';
+	import { getFlash } from 'sveltekit-flash-message';
+	import { page } from '$app/state';
 
 	let {
 		onUploadComplete = () => {},
@@ -18,6 +20,8 @@
 	if (!files) {
 		files = [];
 	}
+
+	const flash = getFlash(page);
 
 	let fileInput: HTMLInputElement;
 	let isDragging = $state(false);
@@ -144,6 +148,7 @@
 			}
 
 			// Reset after successful upload
+			$flash = { type: 'success', message: `Uploaded ${files.length} audio${files.length === 1 ? '' : 's'}.` };
 			files = [];
 			uploading = false;
 			uploadProgress = [];
