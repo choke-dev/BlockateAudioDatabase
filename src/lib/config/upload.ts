@@ -12,7 +12,7 @@ export const uploadConfig = {
 	maxBatchSize: 10,
 
 	// Maximum audio duration
-	maxAudioDuration: 7 * 60 + 5,
+	maxAudioDuration: 7 * 60,
 
 	// Allowed file types (empty array means all types allowed)
 	allowedFileTypes: ['audio/mpeg', 'audio/ogg', 'video/ogg', 'audio/wav', 'audio/flac'] as string[],
