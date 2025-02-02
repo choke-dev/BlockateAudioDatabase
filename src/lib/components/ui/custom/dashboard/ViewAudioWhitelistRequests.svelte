@@ -16,6 +16,8 @@
         submit: false,
     });
 
+    let errors = $state<{ [key: string]: string | null }>({}); // Track errors for each request
+
     type AudioRequest = {
         fileName: string,
         id: string,
@@ -83,6 +85,7 @@
                 loading[element.id] = false;
                 loading[`${element.id}:accept`] = false;
                 loading[`${element.id}:reject`] = false;
+                errors[element.id] = null; // Reset errors when fetching new requests
             });
         } catch (error) {
             console.error('Error fetching requests:', error);
@@ -101,17 +104,25 @@
         loading.submit = true;
         loading[requestId] = true;
         loading[`${requestId}:${action}`] = true;
+        errors[requestId] = null; // Reset error state before making the request
+
         try {
             console.log(`Sending ${action} request for request ID ${requestId}`);
-            fetch(`/api/audio/requests/${requestId}`, {
+            const res = await fetch(`/api/audio/requests/${requestId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action }),
-            }).then((res) => {
-                requests = requests.filter((request) => request.id !== requestId);
-            })
+            });
+
+            const data = await res.json();
+            if (!data.success) {
+                errors[requestId] = data.errors?.[0]?.message || 'An error occurred'; // Set error message
+            } else {
+                requests = requests.filter((request) => request.id !== requestId); // Remove the request if successful
+            }
         } catch (error) {
             console.error(`Error ${action}ing request:`, error);
+            errors[requestId] = 'An error occurred while processing the request.'; // Set error message
         } finally {
             loading.submit = false;
             loading[requestId] = false;
@@ -158,34 +169,47 @@
                     <ul class="max-h-[64rem] overflow-y-auto divide-y">
                         {#each requests as request, index}
                             <li
-                                class={`flex justify-between py-2 px-4 group hover:backdrop-brightness-200 transition-colors duration-300 ${index === 0 ? 'rounded-t-lg' : ''} ${index === requests.length - 1 ? 'rounded-b-lg' : ''}`}
+                                class={`flex flex-col py-2 px-4 group hover:backdrop-brightness-200 transition-colors duration-300 ${index === 0 ? 'rounded-t-lg' : ''} ${index === requests.length - 1 ? 'rounded-b-lg' : ''}`}
                                 >
-                                <div class="flex items-center gap-x-2 flex-1">
-                                    <Checkbox 
-                                        bind:checked={request.isSelected}
-                                    />
-                                    <span>{request.fileName}</span>
+                                <!-- File Name and Buttons Row -->
+                                <div class="flex justify-between items-center">
+                                    <!-- File Name and Checkbox -->
+                                    <div class="flex items-center gap-x-2">
+                                        <Checkbox 
+                                            bind:checked={request.isSelected}
+                                        />
+                                        <span>{request.fileName}</span>
+                                    </div>
+
+                                    <!-- Buttons (Play, Accept, Reject) -->
+                                    {#if !isSelectionMode}
+                                        <div class="flex gap-2">
+                                            <!-- Play/Pause Button -->
+                                            <Button variant="outline" size="icon" onclick={() => togglePlayPause(request.id, request.fileURL)}>
+                                                {#if currentlyPlayingId === request.id && isPlaying}
+                                                    <LucidePause />
+                                                {:else}
+                                                    <LucidePlay />
+                                                {/if}
+                                            </Button>
+                                            <!-- Accept Button -->
+                                            <Button variant="success" disabled={loading[`${request.id}:accept`] || loading[request.id]} onclick={() => handleRequest(request.id, 'accept')}>
+                                                {#if loading[`${request.id}:accept`]} <LucideLoaderCircle class="animate-spin" /> {:else} <LucideCheck /> {/if}
+                                                Accept
+                                            </Button>
+                                            <!-- Reject Button -->
+                                            <Button variant="destructive" disabled={loading[`${request.id}:reject`] || loading[request.id]} onclick={() => handleRequest(request.id, 'reject')}>
+                                                {#if loading[`${request.id}:reject`]} <LucideLoaderCircle class="animate-spin" /> {:else} <LucideX /> {/if}
+                                                Reject
+                                            </Button>
+                                        </div>
+                                    {/if}
                                 </div>
-                                {#if !isSelectionMode}
-                                    <div class="flex gap-2">
-                                        <!-- Play/Pause Button -->
-                                        <Button variant="outline" size="icon" onclick={() => togglePlayPause(request.id, request.fileURL)}>
-                                            {#if currentlyPlayingId === request.id && isPlaying}
-                                                <LucidePause />
-                                            {:else}
-                                                <LucidePlay />
-                                            {/if}
-                                        </Button>
-                                        <!-- Accept Button -->
-                                        <Button variant="success" disabled={loading[`${request.id}:accept`] || loading[request.id]} onclick={() => handleRequest(request.id, 'accept')}>
-                                            {#if loading[`${request.id}:accept`]} <LucideLoaderCircle class="animate-spin" /> {:else} <LucideCheck /> {/if}
-                                            Accept
-                                        </Button>
-                                        <!-- Reject Button -->
-                                        <Button variant="destructive" disabled={loading[`${request.id}:reject`] || loading[request.id]} onclick={() => handleRequest(request.id, 'reject')}>
-                                            {#if loading[`${request.id}:reject`]} <LucideLoaderCircle class="animate-spin" /> {:else} <LucideX /> {/if}
-                                            Reject
-                                        </Button>
+
+                                <!-- Error Message (aligned with the file name) -->
+                                {#if errors[request.id]}
+                                    <div class="text-red-500 text-sm mt-1 pl-8">
+                                        {errors[request.id]}
                                     </div>
                                 {/if}
                             </li>
