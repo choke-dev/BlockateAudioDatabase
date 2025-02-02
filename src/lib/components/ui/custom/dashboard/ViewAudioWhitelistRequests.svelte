@@ -106,35 +106,35 @@
 		loading[`${requestId}:${action}`] = true;
 		errors[requestId] = null; // Reset error state before making the request
 
-		try {
-			console.log(`Sending ${action} request for request ID ${requestId}`);
-			const res = await fetch(`/api/audio/requests/${requestId}`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ action })
-			});
+		fetch(`/api/audio/requests/${requestId}`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ action })
+		})
+			.then(async (res) => {
+				const data = await res.json();
+				if (!data.success) {
+					errors[requestId] = data.errors?.[0]?.message || 'An error occurred'; // Set error message
+				} else {
+					// Check if the request being removed is the one currently playing
+					if (currentlyPlayingId === requestId) {
+						audioElement.pause(); // Stop the audio
+						currentlyPlayingId = null; // Reset the currently playing ID
+						isPlaying = false; // Update the playing state
+					}
 
-			const data = await res.json();
-			if (!data.success) {
-				errors[requestId] = data.errors?.[0]?.message || 'An error occurred'; // Set error message
-			} else {
-				// Check if the request being removed is the one currently playing
-				if (currentlyPlayingId === requestId) {
-					audioElement.pause(); // Stop the audio
-					currentlyPlayingId = null; // Reset the currently playing ID
-					isPlaying = false; // Update the playing state
+					requests = requests.filter((request) => request.id !== requestId); // Remove the request if successful
 				}
-
-				requests = requests.filter((request) => request.id !== requestId); // Remove the request if successful
-			}
-		} catch (error) {
-			console.error(`Error ${action}ing request:`, error);
-			errors[requestId] = 'An error occurred while processing the request.'; // Set error message
-		} finally {
-			loading.submit = false;
-			loading[requestId] = false;
-			loading[`${requestId}:${action}`] = false;
-		}
+			})
+			.catch((error) => {
+				console.error(`Error ${action}ing request:`, error);
+				errors[requestId] = 'An error occurred while processing the request.'; // Set error message
+			})
+			.finally(() => {
+				loading.submit = false;
+				loading[requestId] = false;
+				loading[`${requestId}:${action}`] = false;
+			});
 	}
 
 	async function handleBulkAction(action: 'accept' | 'reject') {
