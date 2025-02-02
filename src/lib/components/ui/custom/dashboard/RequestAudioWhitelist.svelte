@@ -34,7 +34,7 @@
             <Dialog.Header>
                 <Dialog.Title>Submit Audio Whitelist Request</Dialog.Title>
                 <Dialog.Description>Drag and drop files, or click to select them</Dialog.Description>
-                <Dialog.Description class="flex items-center gap-x-2"><LucideTriangleAlert class="text-yellow-500" /> <p>File names must conform to this pattern: <code class="bg-zinc-800">NAME --- CATEGORY</code></p></Dialog.Description>
+                <Dialog.Description class="flex items-center gap-x-2"><LucideTriangleAlert class="text-yellow-500" /> <p>File names must conform to this pattern: <code class="bg-zinc-800">AUDIO CATEGORY --- AUDIO NAME</code></p></Dialog.Description>
             </Dialog.Header>
             
             <FileUpload hideUploadButton={true} bind:files={files} bind:this={fileUpload} />
