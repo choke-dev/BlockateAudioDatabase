@@ -87,8 +87,9 @@ async function acceptRequest(event: RequestEvent) {
             await prisma.uploadedAudio.create({
                 data: { 
                     id: assetId, 
-                    name: audioName, 
-                    grantedUsePermissions: whitelistResponse.success 
+                    name: audioName,
+                    category: audioCategory,
+                    grantedUsePermissions: whitelistResponse.success,
                 }
             });
             unlink(tempFilePath, err => {

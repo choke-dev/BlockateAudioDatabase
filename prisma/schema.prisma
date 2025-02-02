@@ -36,6 +36,7 @@ model Requests {
 model UploadedAudio {
   id                String   @id @default(uuid())
   name              String
+  category          String
 
   grantedUsePermissions Boolean  @default(false)
   isProcessed       Boolean  @default(false)
