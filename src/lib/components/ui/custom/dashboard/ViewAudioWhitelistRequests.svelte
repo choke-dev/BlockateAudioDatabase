@@ -170,7 +170,7 @@
 			{:else if requests.length === 0}
 				<div class="flex gap-x-2">No audio whitelist requests</div>
 			{:else}
-				<ul class="max-h-[64rem] divide-y overflow-y-auto">
+				<ul class="max-h-[38rem] divide-y overflow-y-auto">
 					{#each requests as request, index}
 						<li
 							class={`group flex flex-col px-4 py-2 transition-colors duration-300 hover:backdrop-brightness-200 ${index === 0 ? 'rounded-t-lg' : ''} ${index === requests.length - 1 ? 'rounded-b-lg' : ''}`}
