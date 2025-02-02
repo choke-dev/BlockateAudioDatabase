@@ -1,19 +1,23 @@
 const MODE = import.meta.env.MODE;
 export const BASE_URL = MODE === 'development' ? 'http://localhost:5173' : 'https://blockateaudiodb.choke.dev';
 
-export const DISCORD_CLIENT_ID = "1327153407286579270";
-export const ROBLOX_CLIENT_ID = "7919966279299549540";
-
-export const MAX_SEARCH_RESULTS_PER_PAGE = 25;
-
 // If true, will only allow users in USER_PERMISSIONS to login and access the dashboard.
 export const ENFORCE_LOGIN_WHITELIST = false;
 export const ROUTE_PERMISSIONS: Record<string, number> = {
 	'/dashboard': 0,
-    '/api/dashboard': 2
+
+    // API Routes
+    '/api/audio/upload': 0,
+    '/api/audio/requests': 1,
+    '/api/dashboard/audio': 2,
 };
 export const USER_PERMISSIONS: Record<string, number> = {
-    "208876506146013185": 2,
-    "1096213302654275594": 2,
-    "1228943796251791360": 2
+    "208876506146013185": 3, // choke
+    "1096213302654275594": 3, // zoydim
+    "1228943796251791360": 3, // koral.reefz
+
+    "547716250629832704": 1, // dg99doomguy
+    "1144775173833232466": 1, // manafestation
+    "455059432003338242": 1, // ganderest
+    "670725649991729198": 1, // mequritsu
 };

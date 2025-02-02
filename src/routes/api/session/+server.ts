@@ -1,4 +1,4 @@
-import { USER_PERMISSIONS } from "$lib/config";
+import { USER_PERMISSIONS } from "$lib/config/config";
 import type { RequestHandler } from "@sveltejs/kit";
 
 export const GET: RequestHandler = async ({ locals }) => {

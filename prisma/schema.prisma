@@ -23,12 +23,26 @@ model Audio {
 model Requests {
   id        String   @id @default(uuid())
   userId    String
-  message   String
+  
+  fileName      String
+  filePath   String
+  fullFilePath String
 
   createdAt DateTime @default(now())
 
   User      User     @relation(fields: [userId], references: [id])
 }
+
+model UploadedAudio {
+  id                String   @id @default(uuid())
+  name              String
+
+  grantedUsePermissions Boolean  @default(false)
+  isProcessed       Boolean  @default(false)
+
+  uploadedAt        DateTime @default(now())
+}
+
 
 // Authentication
 model State {

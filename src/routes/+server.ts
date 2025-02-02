@@ -1,4 +1,4 @@
-import { MAX_SEARCH_RESULTS_PER_PAGE } from "$lib/config";
+import { MAX_SEARCH_RESULTS_PER_PAGE } from "$lib/config/search";
 import { RetryAfterRateLimiter } from 'sveltekit-rate-limiter/server';
 import { prisma } from "$lib/server/db";
 import { SearchFilterSchema } from "$lib/zodSchemas";

@@ -1,5 +1,6 @@
 import { DISCORD_CLIENT_SECRET } from '$env/static/private';
-import { BASE_URL, DISCORD_CLIENT_ID } from '$lib/config';
+import { BASE_URL } from '$lib/config/config';
+import { DISCORD_CLIENT_ID } from '$lib/config/oauth';
 
 import * as arctic from 'arctic';
 import { prisma } from './db';

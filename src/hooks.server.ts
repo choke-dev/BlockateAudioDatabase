@@ -1,4 +1,4 @@
-import { ROUTE_PERMISSIONS, USER_PERMISSIONS } from '$lib/config';
+import { ROUTE_PERMISSIONS, USER_PERMISSIONS } from '$lib/config/config';
 import { validateSessionToken } from '$lib/server/session';
 import { error, type Handle } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';

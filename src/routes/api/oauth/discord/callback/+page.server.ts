@@ -4,7 +4,7 @@ import { redirect } from 'sveltekit-flash-message/server'
 import { validateAuthorizationCode } from "$lib/server/oauth";
 import * as argon2 from "argon2";
 import { createSessionToken } from "$lib/server/session";
-import { ENFORCE_LOGIN_WHITELIST, USER_PERMISSIONS } from "$lib/config";
+import { ENFORCE_LOGIN_WHITELIST, USER_PERMISSIONS } from "$lib/config/config";
 
 export const load: PageServerLoad = async (event) => {
     const url = new URL(event.request.url);

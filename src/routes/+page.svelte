@@ -10,7 +10,7 @@
 	import LucideX from '~icons/lucide/x';
 
 	import SearchFilter from '$lib/components/ui/custom/SearchFilter.svelte';
-	import { MAX_SEARCH_RESULTS_PER_PAGE } from '$lib/config';
+	import { MAX_SEARCH_RESULTS_PER_PAGE } from '$lib/config/search';
 	import type { Audio } from '@prisma/client';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
