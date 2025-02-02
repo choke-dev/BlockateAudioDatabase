@@ -8,7 +8,7 @@ import { prisma } from './db';
 const roblox = new arctic.Discord(
 	DISCORD_CLIENT_ID,
 	DISCORD_CLIENT_SECRET,
-	`${BASE_URL}/api/oauth/discord/callback`
+	`${BASE_URL ?? import.meta.env.BASE_URL}/api/oauth/discord/callback`
 );
 
 function stringToHex(str: string) {

@@ -66,6 +66,7 @@
 		"get-audio-duration": "^4.0.1",
 		"openblox": "^1.0.59",
 		"postgres": "^3.4.4",
+		"vercel": "^40.1.0",
 		"zod": "^3.24.1"
 	},
 	"overrides": {
