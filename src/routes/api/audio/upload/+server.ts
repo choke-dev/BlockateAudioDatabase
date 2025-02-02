@@ -20,6 +20,9 @@ const TEMP_DIR = MODE === 'development' ? join(process.cwd(), uploadConfig.direc
 const allowedFileTypes = ["audio/mpeg", "audio/ogg", "audio/wav", "audio/flac"];
 const fileNameRegex = /^(\S.*) --- (\S.*?)(?:\..*)?$/
 
+const platform = process.platform;
+const ffprobePath = platform === "linux" ? `${process.cwd()}/src/bin/ffprobe-x64-${platform}-6.1` : undefined;
+
 export const POST: RequestHandler = async ({ request, locals }) => {
     try {
         const formData = await request.formData();
@@ -92,7 +95,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
                 }
             });
 
-            const audioDuration = await getAudioDurationInSeconds(finalFilePath);
+            
+            const audioDuration = await getAudioDurationInSeconds(finalFilePath, ffprobePath);
             if (audioDuration > uploadConfig.maxAudioDuration) {
                 unlink(finalFilePath, (err) => {
                     if (err) {
