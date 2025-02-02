@@ -8,11 +8,13 @@ import { getAudioDurationInSeconds } from 'get-audio-duration';
 import { join } from 'path';
 import { promisify } from 'util';
 
+const MODE = import.meta.env.MODE;
+
 // Convert callback-based functions to promise-based
 const readFileAsync = promisify(readFile);
 
-const UPLOADS_DIR = join(process.cwd(), uploadConfig.directories.uploads);
-const TEMP_DIR = join(process.cwd(), uploadConfig.directories.temp);
+const UPLOADS_DIR = MODE === 'development' ? join(process.cwd(), uploadConfig.directories.uploads) : uploadConfig.directories.uploads
+const TEMP_DIR = MODE === 'development' ? join(process.cwd(), uploadConfig.directories.temp) : uploadConfig.directories.temp
 
 // Define allowed MIME types
 const allowedFileTypes = ["audio/mpeg", "audio/ogg", "audio/wav", "audio/flac"];
