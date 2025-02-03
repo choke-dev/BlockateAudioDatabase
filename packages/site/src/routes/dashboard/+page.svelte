@@ -3,6 +3,7 @@
 	import DatabaseManagementActions from "$lib/components/ui/custom/dashboard/DatabaseManagementActions.svelte";
 	import RequestAudioWhitelist from "$lib/components/ui/custom/dashboard/RequestAudioWhitelist.svelte";
 	import ViewAudioWhitelistRequests from "$lib/components/ui/custom/dashboard/ViewAudioWhitelistRequests.svelte";
+	import NotifyWhitelister from "$lib/components/ui/custom/dashboard/NotifyWhitelister.svelte";
 
     let { data }: { data: PageData } = $props();
 </script>
@@ -34,6 +35,10 @@
             <RequestAudioWhitelist />
             {#if data.permissionLevel >= 1}
                 <ViewAudioWhitelistRequests />
+            {/if}
+
+            {#if data.permissionLevel >= 3}
+                <NotifyWhitelister />
             {/if}
         </div>
         

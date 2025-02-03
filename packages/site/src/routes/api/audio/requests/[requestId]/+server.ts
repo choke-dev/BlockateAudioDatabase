@@ -29,26 +29,42 @@ async function deleteRequest(requestId: string) {
     }
 }
 
+function getAvailableBot(): Promise<typeof PARSED_ROBLOX_CREDENTIALS[number]> {
+    return new Promise((resolve, reject) => {
+        let unavailableCredentials: typeof PARSED_ROBLOX_CREDENTIALS[number][] = [];
+        const pickBot = async () => {
+            const choosenCredential = PARSED_ROBLOX_CREDENTIALS[Math.floor(Math.random() * PARSED_ROBLOX_CREDENTIALS.length)];
+            if (unavailableCredentials.includes(choosenCredential)) return reject(new Error('No available bots can handle the upload at this time. Please try again later.'));
+            unavailableCredentials.push(choosenCredential);
+            const response = await fetch(`https://publish.roblox.com/v1/asset-quotas?resourceType=RateLimitUpload&assetType=Audio`, {
+                headers: { 'Cookie': `.ROBLOSECURITY=${choosenCredential.accountCookie}` }
+            });
+            const data = await response.json();
+            if (data.errors?.[0].message === "User is moderated") {
+                console.warn(`[ ! ] Bot ${choosenCredential.userId} has a moderation action. Picking another bot...`);
+                return pickBot();
+            }
+            console.log(`Bot ${choosenCredential.userId} has ${data.quotas[0].capacity - data.quotas[0].usage}/${data.quotas[0].capacity} audio uploads remaining`);
+            if (data.quotas[0].usage < data.quotas[0].capacity) return resolve(choosenCredential);
+            return pickBot();
+        }
+        pickBot();
+    });
+}
+
 async function acceptRequest(event: RequestEvent) {
     const requestId = event.params.requestId;
     const request = await prisma.requests.findUnique({ where: { id: requestId } });
     if (!request) return new Response(JSON.stringify({ success: false, errors: [{ message: 'Request not found', code: 'request_not_found' }] }), { status: 404 });
 
-    let choosenCredential = PARSED_ROBLOX_CREDENTIALS[Math.floor(Math.random() * PARSED_ROBLOX_CREDENTIALS.length)];
-    while (true) {
-        const response = await fetch(`https://publish.roblox.com/v1/asset-quotas?resourceType=RateLimitUpload&assetType=Audio`, {
-            headers: { 'Cookie': `.ROBLOSECURITY=${choosenCredential.accountCookie}` }
-        });
-        const data = await response.json();
-        console.log(`Chosen credential has usage of ${data.quotas[0].usage} and capacity of ${data.quotas[0].capacity}`);
-        if (data.quotas[0].usage < data.quotas[0].capacity) break;
-        const otherCredentials = PARSED_ROBLOX_CREDENTIALS.filter(credential => credential !== choosenCredential);
-        if (otherCredentials.length === 0) {
-            return new Response(JSON.stringify({ success: false, errors: [{ message: 'No available bots can handle the upload at this time. Please try again later.', code: 'no_available_bots' }] }), { status: 503 });
-        }
-        console.log("Picking another credential...");
-        choosenCredential = otherCredentials[Math.floor(Math.random() * otherCredentials.length)];
+    let choosenCredential;
+    try {
+        choosenCredential = await getAvailableBot();
+    } catch (err) {
+        choosenCredential = null;
     }
+
+    if (!choosenCredential) return new Response(JSON.stringify({ success: false, errors: [{ message: 'No bots are available to handle this request', code: 'no_bots_available' }] }), { status: 503 });
 
     setConfig({ cloudKey: choosenCredential.opencloudAPIKey });
 
@@ -71,7 +87,7 @@ async function acceptRequest(event: RequestEvent) {
     try {
         const asset = await AssetsApi.createAsset({
             assetType: 'Audio',
-            displayName: audioName,
+            displayName: uploadConfig.audioDisplayName.replace("{audioName}", audioName).replace("{audioCategory}", audioCategory),
             description: uploadConfig.descriptionTemplate.replace("{audioName}", audioName).replace("{audioCategory}", audioCategory),
             file: tempFilePath,
             //@ts-ignore: we already check if the file type is valid before the user can upload it
