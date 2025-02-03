@@ -130,6 +130,12 @@
 		}
 	}
 
+	async function uploadBatch(fileBatch: { file: File; index: number }[]): Promise<void> {
+		await Promise.all(
+			fileBatch.map(({ file, index }) => uploadFile(file, index).catch(() => {}))
+		);
+	}
+
 	export async function uploadFiles() {
 		if (files.length === 0) return;
 
@@ -137,9 +143,20 @@
 		uploadProgress = files.map((file) => ({ name: file.name, progress: 0 }));
 
 		try {
-			await Promise.all(
-				files.map((file, index) => uploadFile(file, index).catch(() => {})) // Catch errors to allow other files to continue uploading
-			);
+			// Create batches of files based on maxConcurrentUploads
+			const batches: { file: File; index: number }[][] = [];
+			files.forEach((file, index) => {
+				const batchIndex = Math.floor(index / uploadConfig.maxConcurrentUploads);
+				if (!batches[batchIndex]) {
+					batches[batchIndex] = [];
+				}
+				batches[batchIndex].push({ file, index });
+			});
+
+			// Process batches sequentially
+			for (const batch of batches) {
+				await uploadBatch(batch);
+			}
 
 			// Check if any files failed to upload
 			const failedUploads = uploadProgress.filter((up) => up.error);
