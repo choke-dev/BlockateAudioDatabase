@@ -31,7 +31,7 @@ export const load: PageServerLoad = async (event) => {
     const randomString = randomBytes.map(byte => byte.toString(16).padStart(2, '0')).join('');
     const hash = await argon2.hash(randomString);
     const session = await createSessionToken(info.userInfo.id as string, hash);
-    event.cookies.set('session', `${session.id}:${randomString}`, { path: '/', sameSite: 'strict', httpOnly: true });
+    event.cookies.set('session', `${session.id}:${randomString}`, { path: '/', sameSite: 'strict', httpOnly: true, maxAge: 30 * 24 * 60 * 60 });
 
     if (info.redirectURI) throw redirect(302, info.redirectURI);
     throw redirect(302, '/');
