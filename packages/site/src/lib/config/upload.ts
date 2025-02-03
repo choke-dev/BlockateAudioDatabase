@@ -6,7 +6,7 @@ export const uploadConfig = {
 	maxFileSize: 1024 * 1024 * 20, // 20MB
 
 	// Maximum concurrent uploads
-	maxConcurrentUploads: 3,
+	maxConcurrentUploads: 1,
 
 	// Maximum amount of files that can be uploaded in a single batch
 	maxBatchSize: 10,
