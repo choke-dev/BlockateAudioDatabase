@@ -10,13 +10,16 @@ import { AssetsApi } from "openblox/cloud";
 import { setConfig } from "openblox/config";
 import { join } from "path";
 import type { RequestEvent } from "./$types";
+import { generateAcceptNotification, generateRejectNotification } from "$lib/config/bot";
+import type { Requests } from "@prisma/client";
+import { HttpError } from "openblox/http";
 
 const PARSED_ROBLOX_CREDENTIALS: { opencloudAPIKey: string, accountCookie: string, userId: string }[] = JSON.parse(ROBLOX_CREDENTIALS);
+const updatesChannel = supabase.channel("updates")
 
-async function deleteRequest(requestId: string) {
-    const request = await prisma.requests.findUnique({ where: { id: requestId } });
+async function deleteRequest(request: Requests) {
     if (!request) return { success: false, errors: [{ message: 'Request not found', code: 'request_not_found' }] };
-
+    
     try {
         await Promise.all([
             prisma.requests.delete({ where: { id: request.id } }),
@@ -113,26 +116,50 @@ async function acceptRequest(event: RequestEvent) {
                     requesterUserId: request.userId,
                     uploaderUserId: choosenCredential.userId
                 }
-            });
+            }).then(() => console.log(`Whitelisted audio ${audioName} from user ${request.userId}`));
+
+            updatesChannel.send({
+                type: "broadcast",
+                event: "audio_request_accepted",
+                payload: generateAcceptNotification(request.userId, { name: audioName, category: audioCategory })
+            })
+
             unlink(tempFilePath, err => {
                 if (err) console.error("Error deleting file", err);
             });
         }
     } catch (err) {
+
+        if (err instanceof HttpError) {
+            if (err.errors[0].message === 'Asset name and description is fully moderated.') return new Response(JSON.stringify({ success: false, errors: [{ code: 'audio_name_description_moderated', message: `Audio name OR category is moderated, please edit the file name and try again.` }] }), { status: 500 });
+        }
+
         console.error(err);
         return new Response(JSON.stringify({ success: false, errors: [{ code: 'unknown_error' }] }), { status: 500 });
     }
 
-    await deleteRequest(requestId);
+    await deleteRequest(request);
     return new Response(JSON.stringify({ success: true }));
 }
 
 async function rejectRequest(event: RequestEvent) {
     const requestId = event.params.requestId;
-    const deleteResponse = await deleteRequest(requestId);
+    const request = await prisma.requests.findUnique({ where: { id: requestId } });
+
+    if (!request) return new Response(JSON.stringify({ success: false, errors: [{ message: 'Request not found', code: 'request_not_found' }] }), { status: 404 });
+
+    const deleteResponse = await deleteRequest(request);
     if (!deleteResponse.success) {
         return new Response(JSON.stringify(deleteResponse), { status: 500 });
     }
+    const audioRegexMatch = request.fileName.match(uploadConfig.fileNameRegex);
+    if (!audioRegexMatch) return { success: false, errors: [{ message: 'Invalid file name', code: 'invalid_file_name' }] };
+    const [audioCategory, audioName] = [audioRegexMatch[1].slice(0, 1000), audioRegexMatch[2].slice(0, 50)];
+        updatesChannel.send({
+            type: "broadcast",
+            event: "audio_request_rejected",
+            payload: generateRejectNotification(request.userId, { name: audioName, category: audioCategory })
+        })
     return new Response(JSON.stringify({ success: true }));
 }
 
