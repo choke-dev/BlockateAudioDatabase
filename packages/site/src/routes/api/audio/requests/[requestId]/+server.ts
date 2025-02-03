@@ -110,6 +110,7 @@ async function acceptRequest(event: RequestEvent) {
                     name: audioName,
                     category: audioCategory,
                     grantedUsePermissions: whitelistResponse.success,
+                    requesterUserId: request.userId,
                     uploaderUserId: choosenCredential.userId
                 }
             });

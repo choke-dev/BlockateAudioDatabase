@@ -14,40 +14,41 @@ model Audio {
   category          String
   whitelisterName   String
   whitelisterUserId BigInt
-  
 
-  created_at        DateTime @default(now()) @db.Timestamptz()
-  updated_at        DateTime @default(now()) @db.Timestamptz()
+  created_at DateTime @default(now()) @db.Timestamptz()
+  updated_at DateTime @default(now()) @db.Timestamptz()
 }
 
 model Requests {
-  id        String   @id @default(uuid())
-  userId    String
-  
-  fileName      String
-  filePath   String
+  id     String @id @default(uuid())
+  userId String
+
+  fileName     String
+  filePath     String
   fullFilePath String
 
   createdAt DateTime @default(now())
 
-  User      User     @relation(fields: [userId], references: [id])
+  User User @relation(fields: [userId], references: [id])
 }
 
 model UploadedAudio {
-  id                String   @id @default(uuid())
-  name              String
-  category          String
+  id       String @id @default(uuid())
+  name     String
+  category String
 
-  uploaderUserId String
-  groupId BigInt?
+  uploaderUserId  String
+  requesterUserId String  @default("0")
+  groupId         BigInt?
 
-  grantedUsePermissions Boolean  @default(false)
-  isProcessed       Boolean  @default(false)
-  isModerated       Boolean  @default(false)
+  grantedUsePermissions Boolean @default(false)
+  isProcessed           Boolean @default(false)
+  isModerated           Boolean @default(false)
 
-  uploadedAt        DateTime @default(now())
+  uploadedAt DateTime @default(now())
+
+  User User @relation(fields: [requesterUserId], references: [id])
 }
-
 
 // Authentication
 model State {
@@ -84,10 +85,11 @@ model User {
   flags        BigInt?
   premium_type BigInt?
   public_flags BigInt?
-  
-  sessions Session[]
-  tokens   Token[]
-  requests Requests[]
+
+  sessions      Session[]
+  tokens        Token[]
+  requests      Requests[]
+  uploadedAudio UploadedAudio[]
 }
 
 model Session {
