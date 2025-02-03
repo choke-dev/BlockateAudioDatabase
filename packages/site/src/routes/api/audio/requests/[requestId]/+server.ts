@@ -31,21 +31,25 @@ async function deleteRequest(requestId: string) {
 
 function getAvailableBot(): Promise<typeof PARSED_ROBLOX_CREDENTIALS[number]> {
     return new Promise((resolve, reject) => {
-        let unavailableCredentials: typeof PARSED_ROBLOX_CREDENTIALS[number][] = [];
+        let availableCredentials = [...PARSED_ROBLOX_CREDENTIALS];
         const pickBot = async () => {
-            const choosenCredential = PARSED_ROBLOX_CREDENTIALS[Math.floor(Math.random() * PARSED_ROBLOX_CREDENTIALS.length)];
-            if (unavailableCredentials.includes(choosenCredential)) return reject(new Error('No available bots can handle the upload at this time. Please try again later.'));
-            unavailableCredentials.push(choosenCredential);
+            if (availableCredentials.length === 0) {
+                return reject(new Error('No available bots can handle the upload at this time. Please try again later.'));
+            }
+            const randomIndex = Math.floor(Math.random() * availableCredentials.length);
+            const choosenCredential = availableCredentials[randomIndex];
             const response = await fetch(`https://publish.roblox.com/v1/asset-quotas?resourceType=RateLimitUpload&assetType=Audio`, {
                 headers: { 'Cookie': `.ROBLOSECURITY=${choosenCredential.accountCookie}` }
             });
             const data = await response.json();
             if (data.errors?.[0].message === "User is moderated") {
                 console.warn(`[ ! ] Bot ${choosenCredential.userId} has a moderation action. Picking another bot...`);
+                availableCredentials.splice(randomIndex, 1);
                 return pickBot();
             }
             console.log(`Bot ${choosenCredential.userId} has ${data.quotas[0].capacity - data.quotas[0].usage}/${data.quotas[0].capacity} audio uploads remaining`);
             if (data.quotas[0].usage < data.quotas[0].capacity) return resolve(choosenCredential);
+            availableCredentials.splice(randomIndex, 1);
             return pickBot();
         }
         pickBot();
@@ -73,7 +77,7 @@ async function acceptRequest(event: RequestEvent) {
         return new Response(JSON.stringify({ success: false, errors: [{ message: 'Invalid file name', code: 'invalid_file_name' }] }), { status: 400 });
     }
 
-    const [audioCategory, audioName] = [audioRegexMatch[1], audioRegexMatch[2]];
+    const [audioCategory, audioName] = [audioRegexMatch[1].slice(0, 1000), audioRegexMatch[2].slice(0, 50)];
     const { data: fileData, error } = await supabase.storage.from('whitelistrequests').download(request.filePath);
     if (error) return new Response(JSON.stringify({ success: false, errors: [{ message: error.message, code: 'unknown_error' }] }), { status: 500 });
 
@@ -106,6 +110,7 @@ async function acceptRequest(event: RequestEvent) {
                     name: audioName,
                     category: audioCategory,
                     grantedUsePermissions: whitelistResponse.success,
+                    uploaderUserId: choosenCredential.userId
                 }
             });
             unlink(tempFilePath, err => {

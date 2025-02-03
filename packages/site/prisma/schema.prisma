@@ -38,6 +38,9 @@ model UploadedAudio {
   name              String
   category          String
 
+  uploaderUserId String
+  groupId BigInt?
+
   grantedUsePermissions Boolean  @default(false)
   isProcessed       Boolean  @default(false)
   isModerated       Boolean  @default(false)
