@@ -9,7 +9,44 @@
 	import LucideRefreshCw from '~icons/lucide/refresh-cw';
 	import LucidePlay from '~icons/lucide/play';
 	import LucidePause from '~icons/lucide/pause';
-	import Checkbox from '../../checkbox/checkbox.svelte';
+	import Checkbox from '$lib/components/ui/checkbox/checkbox.svelte';
+	import Separator from '$lib/components/ui/separator/separator.svelte';
+
+	type DiscordUser = {
+		id: string;
+		created_at: string;
+		username: string;
+		avatar: {
+			id: string;
+			link: string;
+			is_animated: boolean;
+		};
+		avatar_decoration: null;
+		badges: string[];
+		accent_color: number;
+		global_name: string;
+		banner: {
+			id: string;
+			link: string;
+			is_animated: boolean;
+			color: string;
+		} | null;
+		raw: {
+			id: string;
+			username: string;
+			avatar: string;
+			discriminator: string;
+			public_flags: number;
+			flags: number;
+			banner: string;
+			accent_color: number;
+			global_name: string;
+			avatar_decoration_data: null;
+			banner_color: string;
+			clan: string | null;
+			primary_guild: string | null;
+		};
+	};
 
 	let loading = $state<{ [key: string]: boolean }>({
 		fetchingRequests: false,
@@ -26,7 +63,7 @@
 		createdAt: Date;
 	};
 
-	let requests = $state<(AudioRequest & { isSelected: boolean })[]>([]);
+	let requests = $state<(AudioRequest & { isSelected: boolean; user: DiscordUser })[]>([]);
 	let selectAll = $state(false);
 	let isSelectionMode = $state(false);
 
@@ -70,14 +107,64 @@
 		}
 	}
 
-	async function fetchRequests() {
+	const ONE_HOUR = 1000 * 60 * 60;
+
+	async function getUsers(userIds: string[]): Promise<{ [key: string]: DiscordUser }> {
+		const uniqueUserIds = [...new Set(userIds)];
+		const cachedUsers = uniqueUserIds
+			.filter((userId) => {
+				const userKey = localStorage.getItem(`discord-user-${userId}`);
+				if (!userKey) return false;
+				const cachedUser = JSON.parse(userKey);
+				if (cachedUser && cachedUser.createdAt + ONE_HOUR > Date.now()) {
+					return true;
+				}
+				return false;
+			})
+			.map((userId) => JSON.parse(localStorage.getItem(`discord-user-${userId}`)!));
+
+		const idsToFetch = uniqueUserIds.filter(
+			(userId) => !cachedUsers.some((user) => user.id === userId)
+		);
+
+		// Fetch the users from the API
+		const responses = await Promise.all(
+			idsToFetch.map((userId) => fetch(`https://discordlookup.mesalytic.moe/v1/user/${userId}`))
+		);
+		const newUsers: DiscordUser[] = await Promise.all(responses.map((response) => response.json()));
+
+		// Cache the newly fetched users
+		for (const user of newUsers) {
+			localStorage.setItem(
+				`discord-user-${user.id}`,
+				JSON.stringify({ ...user, createdAt: Date.now() })
+			);
+		}
+
+		// Combine cached and fetched users
+		const users = [...cachedUsers, ...newUsers];
+
+		// Transform the array of users into an indexable dictionary
+		const usersDict: { [key: string]: DiscordUser } = {};
+		for (const user of users) {
+			usersDict[user.id] = user;
+		}
+
+		console.log(usersDict);
+		return usersDict;
+	}
+
+	async function fetchRequests(): Promise<void> {
 		try {
 			loading.fetchingRequests = true;
 			const res = await fetch('/api/audio/requests');
-			const data = await res.json();
+			const data = (await res.json()) as { success: boolean; data: AudioRequest[] };
 			if (data.success) {
-				requests = data.data.map((req: AudioRequest) => ({
+				const userIds = data.data.map((req: AudioRequest) => req.userId);
+				const users = await getUsers(userIds);
+				requests = data.data.map((req: AudioRequest, index) => ({
 					...req,
+					user: users[req.userId],
 					isSelected: false
 				}));
 			}
@@ -180,7 +267,7 @@
 								<!-- File Name and Checkbox -->
 								<div class="flex items-center gap-x-2">
 									<Checkbox bind:checked={request.isSelected} />
-									<span>{request.fileName}</span>
+									<span class={`max-w-[${isSelectionMode ? '62' : '48'}rem] truncate`}>{request.fileName}</span>
 								</div>
 
 								<!-- Buttons (Play, Accept, Reject) -->
@@ -228,12 +315,14 @@
 								</div>
 							</div>
 
-							<!-- Error Message (aligned with the file name) -->
-							{#if errors[request.id]}
-								<div class="mt-1 pl-8 text-sm text-red-500">
-									{errors[request.id]}
-								</div>
-							{/if}
+							<div class="flex items-center">
+								<img src={request.user.avatar.link} alt={`${request.user.username}'s avatar`} class="mr-2 h-6 w-6 rounded-full" />
+								<span class="text-zinc-400">{request.user.username}</span>
+								{#if errors[request.id]}
+									<div class="w-1 h-1 rounded-full bg-zinc-800 mx-2"></div>
+									<span class="text-sm text-red-500">{errors[request.id]}</span>
+								{/if}
+							</div>
 						</li>
 					{/each}
 				</ul>
