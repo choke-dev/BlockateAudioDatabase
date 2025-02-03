@@ -267,7 +267,7 @@
 								<!-- File Name and Checkbox -->
 								<div class="flex items-center gap-x-2">
 									<Checkbox bind:checked={request.isSelected} />
-									<span class={`max-w-[${isSelectionMode ? '62' : '48'}rem] truncate`}>{request.fileName}</span>
+									<span style={`max-width: ${isSelectionMode ? '62rem' : '48rem'};`} class="truncate">{request.fileName}</span>
 								</div>
 
 								<!-- Buttons (Play, Accept, Reject) -->
