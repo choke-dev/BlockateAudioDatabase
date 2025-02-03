@@ -15,8 +15,6 @@
     let fileUpload: FileUpload;
 
     const handleSubmit = async () => {
-        
-        console.log("sub")
 
         loading.submit = true;
         await fileUpload.uploadFiles();
