@@ -117,6 +117,11 @@ export const POST: RequestHandler = async ({ request, locals }) => {
             })
             
             if (error) {
+
+                if (error.name === 'InvalidKey') {
+                    return json({ errors: [{ message: 'File name contains invalid characters' }] }, { status: 400 });
+                }
+
                 console.error('Error uploading file:', error);
                 return json({ errors: [{ message: 'Failed to upload file' }] }, { status: 500 });
             }
