@@ -43,7 +43,7 @@
 		}
 	}
 
-	onMount(fetchAudios);
+	// onMount(fetchAudios);
 </script>
 
 <div>

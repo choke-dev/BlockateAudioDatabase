@@ -20,4 +20,5 @@ export const USER_PERMISSIONS: Record<string, number> = {
     "1144775173833232466": 1, // manafestation
     "455059432003338242": 1, // ganderest
     "670725649991729198": 1, // mequritsu
+    "1155782735340781619": 1, // synthpurple (the group is very tiny)
 };
