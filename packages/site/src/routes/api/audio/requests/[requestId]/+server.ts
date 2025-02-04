@@ -32,31 +32,25 @@ async function deleteRequest(request: Requests) {
     }
 }
 
-function getAvailableBot(): Promise<typeof PARSED_ROBLOX_CREDENTIALS[number]> {
-    return new Promise((resolve, reject) => {
-        let availableCredentials = [...PARSED_ROBLOX_CREDENTIALS];
-        const pickBot = async () => {
-            if (availableCredentials.length === 0) {
-                return reject(new Error('No available bots can handle the upload at this time. Please try again later.'));
-            }
-            const randomIndex = Math.floor(Math.random() * availableCredentials.length);
-            const choosenCredential = availableCredentials[randomIndex];
-            const response = await fetch(`https://publish.roblox.com/v1/asset-quotas?resourceType=RateLimitUpload&assetType=Audio`, {
-                headers: { 'Cookie': `.ROBLOSECURITY=${choosenCredential.accountCookie}` }
-            });
-            const data = await response.json();
-            if (data.errors?.[0].message === "User is moderated") {
-                console.warn(`[ ! ] Bot ${choosenCredential.userId} has a moderation action. Picking another bot...`);
-                availableCredentials.splice(randomIndex, 1);
-                return pickBot();
-            }
-            console.log(`Bot ${choosenCredential.userId} has ${data.quotas[0].capacity - data.quotas[0].usage}/${data.quotas[0].capacity} audio uploads remaining`);
-            if (data.quotas[0].usage < data.quotas[0].capacity) return resolve(choosenCredential);
+async function getAvailableBot(): Promise<{ success: true, credential: { opencloudAPIKey: string, accountCookie: string, userId: string } } | { success: false, errors: { message: string, code: string }[] }> {
+    let availableCredentials = [...PARSED_ROBLOX_CREDENTIALS];
+    while (availableCredentials.length > 0) {
+        const randomIndex = Math.floor(Math.random() * availableCredentials.length);
+        const choosenCredential = availableCredentials[randomIndex];
+        const response = await fetch(`https://publish.roblox.com/v1/asset-quotas?resourceType=RateLimitUpload&assetType=Audio`, {
+            headers: { 'Cookie': `.ROBLOSECURITY=${choosenCredential.accountCookie}` }
+        });
+        const data = await response.json();
+        if (data.errors?.[0].message === "User is moderated") {
+            console.warn(`[ ! ] Bot ${choosenCredential.userId} has a moderation action. Picking another bot...`);
             availableCredentials.splice(randomIndex, 1);
-            return pickBot();
+            continue;
         }
-        pickBot();
-    });
+        console.log(`Bot ${choosenCredential.userId} has ${data.quotas[0].capacity - data.quotas[0].usage}/${data.quotas[0].capacity} audio uploads remaining`);
+        if (data.quotas[0].usage < data.quotas[0].capacity) return { success: true, credential: choosenCredential };
+        availableCredentials.splice(randomIndex, 1);
+    }
+    return { success: false, errors: [{ message: 'No bots are available to handle this request', code: 'no_bots_available' }] };
 }
 
 async function acceptRequest(event: RequestEvent) {
@@ -64,16 +58,11 @@ async function acceptRequest(event: RequestEvent) {
     const request = await prisma.requests.findUnique({ where: { id: requestId } });
     if (!request) return new Response(JSON.stringify({ success: false, errors: [{ message: 'Request not found', code: 'request_not_found' }] }), { status: 404 });
 
-    let choosenCredential;
-    try {
-        choosenCredential = await getAvailableBot();
-    } catch (err) {
-        choosenCredential = null;
-    }
+    const choosenCredential = await getAvailableBot();
 
-    if (!choosenCredential) return new Response(JSON.stringify({ success: false, errors: [{ message: 'No bots are available to handle this request', code: 'no_bots_available' }] }), { status: 503 });
+    if (!choosenCredential.success) return new Response(JSON.stringify({ success: false, errors: [{ message: 'No bots are available to handle this request', code: 'no_bots_available' }] }), { status: 503 });
 
-    setConfig({ cloudKey: choosenCredential.opencloudAPIKey });
+    setConfig({ cloudKey: choosenCredential.credential.opencloudAPIKey });
 
     const audioRegexMatch = request.fileName.match(uploadConfig.fileNameRegex);
     if (!audioRegexMatch) {
@@ -99,13 +88,13 @@ async function acceptRequest(event: RequestEvent) {
             file: tempFilePath,
             //@ts-ignore: we already check if the file type is valid before the user can upload it
             fileName: request.fileName,
-            userId: Number(choosenCredential.userId)
+            userId: Number(choosenCredential.credential.userId)
         });
 
         if (asset.response.success) {
             //@ts-ignore: asset.response.body.response.assetId exists if asset.response.success is true
             const assetId = asset.response.body.response.assetId;
-            const whitelistResponse = await whitelistAssetToUser(choosenCredential, assetId);
+            const whitelistResponse = await whitelistAssetToUser(choosenCredential.credential, assetId);
 
             await prisma.uploadedAudio.create({
                 data: { 
@@ -114,7 +103,7 @@ async function acceptRequest(event: RequestEvent) {
                     category: audioCategory,
                     grantedUsePermissions: whitelistResponse.success,
                     requesterUserId: request.userId,
-                    uploaderUserId: choosenCredential.userId
+                    uploaderUserId: choosenCredential.credential.userId
                 }
             }).then(() => console.log(`Whitelisted audio ${audioName} from user ${request.userId}`));
 
@@ -132,6 +121,7 @@ async function acceptRequest(event: RequestEvent) {
 
         if (err instanceof HttpError) {
             if (err.errors[0].message === 'Asset name and description is fully moderated.') return new Response(JSON.stringify({ success: false, errors: [{ code: 'audio_name_description_moderated', message: `Audio name OR category is moderated, please edit the file name and try again.` }] }), { status: 500 });
+            if (err.errors[0].code === "PERMISSION_DENIED") return new Response(JSON.stringify({ success: false, errors: [{ code: 'whoopsies_messed_up_creatorid', message: `You're accepting too many requests at once, please slow down!` }] }), { status: 500 });
         }
 
         console.error(err);
