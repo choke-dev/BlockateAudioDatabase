@@ -18,6 +18,7 @@
     const filters = $state<{ label: string, value: string, inputValue: string }[]>([]);
     let appliedFilters = $state<{ label: string, value: string, inputValue: string }[]>([]);
     let { updateFilters } = $props();
+    let filterType = $state<"and" | "or">("and");
 
     // Add a new filter
     const addFilter = () => {
@@ -32,7 +33,7 @@
     // Apply filters (expose values)
     const applyFilter = () => {
         appliedFilters = Array.from(filters);
-        updateFilters(appliedFilters);
+        updateFilters({ filters: appliedFilters, filterType });
     };
 
 </script>
@@ -48,7 +49,6 @@
 	        {/snippet}
         </Popover.Trigger>
         <Popover.Content class="p-4 rounded-lg shadow-lg w-[32rem]">
-
             {#if filters.length === 0}
                 <div>
                     <div class="flex-1">
@@ -111,6 +111,24 @@
                 </div>
             {/each}
 
+            <div class="flex items-center space-x-2 mt-4">
+                <span class="text-sm">Filters must match:</span>
+                <Select.Root
+                    type="single"
+                    name="filter-type"
+                    
+                    bind:value={filterType}
+                >
+                    <Select.Trigger class="w-[180px]">
+                        {filterType === "or" ? "any filter (OR)" : "all filters (AND)"}
+                    </Select.Trigger>
+                    <Select.Content>
+                        <Select.Item value="or">any filter (OR)</Select.Item>
+                        <Select.Item value="and">all filters (AND)</Select.Item>
+                    </Select.Content>
+                </Select.Root>
+            </div>
+
             <Separator class="my-4" />
 
             <!-- Add and apply buttons -->
@@ -132,3 +150,4 @@
         </Popover.Content>
     </Popover.Root>
 </div>
+

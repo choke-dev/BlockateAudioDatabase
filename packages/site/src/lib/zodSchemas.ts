@@ -17,10 +17,13 @@ export const BatchDeleteAudioSchema = z.array(
     z.string()
 )
 
-export const SearchFilterSchema = z.array(
-    z.object({
-        label: z.string(),
-        value: z.string(),
-        inputValue: z.string(),
-    })
-)
+export const SearchFilterSchema = z.object({
+    filters: z.array(
+        z.object({
+            label: z.string(),
+            value: z.string(),
+            inputValue: z.string(),
+        })
+    ),
+    filterType: z.enum(["and", "or"])
+});

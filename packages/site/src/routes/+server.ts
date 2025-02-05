@@ -58,17 +58,21 @@ export const POST: RequestHandler = async (event) => {
 
         const parsedRequestBody = await event.request.json();
         const requestBody = SearchFilterSchema.safeParse(parsedRequestBody);
-        const parsedFilters = requestBody.success ? parsedRequestBody : [];
 
-        //@ts-ignore
-        const filterConditions = parsedFilters.map(({ label, value, inputValue }: { label: string, filter: string, inputValue: string }) => {
-            return {
-                [value]: {
-                    contains: inputValue,
-                    mode: 'insensitive',
-                },
-            };
-        });
+        let filterConditions: Record<string, { contains: string; mode: 'insensitive' }>[] = [];
+        if (requestBody.success) {
+            const filterData = requestBody.data!.filters;
+            filterConditions = filterData.map(({ label, value, inputValue }: { label: string; value: string; inputValue: string }) => {
+                return {
+                    [value]: {
+                        contains: inputValue,
+                        mode: 'insensitive',
+                    },
+                };
+            }); 
+        }
+
+        console.log(filterConditions)
 
         const audios = await prisma.audio.findMany({
             where: {
@@ -76,7 +80,7 @@ export const POST: RequestHandler = async (event) => {
                     contains: query,
                     mode: 'insensitive',
                 } : undefined,
-                AND: filterConditions,
+                [requestBody.data ? requestBody.data.filterType.toUpperCase() : 'AND']: filterConditions,
             },
             skip: (currentPage - 1) * MAX_SEARCH_RESULTS_PER_PAGE,
             take: MAX_SEARCH_RESULTS_PER_PAGE,
@@ -87,11 +91,11 @@ export const POST: RequestHandler = async (event) => {
         // Fetch total count of audios that match the query
         const total = await prisma.audio.count({
             where: {
-                name: {
-                    contains: query!,
+                name: query ? {
+                    contains: query,
                     mode: 'insensitive',
-                },
-                AND: filterConditions,
+                } : undefined,
+                [requestBody.data ? requestBody.data.filterType.toUpperCase() : 'AND']: filterConditions,
             },
         });
 

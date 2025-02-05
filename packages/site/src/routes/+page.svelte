@@ -25,7 +25,7 @@
 	let keyword = $state('');
 	let currentPage = $state(1); // Track current page
 	let totalItems = $state(0); // Total number of items (total audios found)
-	let filters = $state<{ label: string; value: string; inputValue: string }[]>([]);
+	let filters = $state<{ filters: { label: string; value: string; inputValue: string }[], type: 'and' | 'or' }>({ filters: [], type: 'and' });
 
 	async function handleSearch(event?: Event) {
 		event?.preventDefault();
@@ -57,7 +57,7 @@
 		lastSearchKeyword = keyword;
 		const response = await fetch(`/?keyword=${encodeURIComponent(lastSearchKeyword)}&page=${currentPage}`, {
 			method: 'POST',
-			body: JSON.stringify(filters)
+			body: JSON.stringify(filters),
 		});
 		if (!response.ok) {
 			const data = await response.json();
@@ -77,7 +77,7 @@
 	}
 
 	async function handleFilterChange(
-		filter: { label: string; value: string; inputValue: string }[]
+		filter: { filters: { label: string; value: string; inputValue: string }[], type: 'and' | 'or' },
 	) {
 		filters = filter;
 		currentPage = 1;
