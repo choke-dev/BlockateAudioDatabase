@@ -13,7 +13,7 @@ import type { RequestEvent } from "./$types";
 import { generateAcceptNotification, generateRejectNotification } from "$lib/config/bot";
 import type { Requests } from "@prisma/client";
 import { HttpError } from "openblox/http";
-import { getBots } from "$lib/server/credentialservice";
+import { getBots } from "$lib/server/credentialService";
 
 const PARSED_ROBLOX_CREDENTIALS: { opencloudAPIKey: string, accountCookie: string, userId: string }[] = JSON.parse(ROBLOX_CREDENTIALS);
 const updatesChannel = supabase.channel("updates")
