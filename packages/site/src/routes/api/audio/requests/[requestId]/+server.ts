@@ -13,6 +13,7 @@ import type { RequestEvent } from "./$types";
 import { generateAcceptNotification, generateRejectNotification } from "$lib/config/bot";
 import type { Requests } from "@prisma/client";
 import { HttpError } from "openblox/http";
+import { getBots } from "$lib/server/credentialservice";
 
 const PARSED_ROBLOX_CREDENTIALS: { opencloudAPIKey: string, accountCookie: string, userId: string }[] = JSON.parse(ROBLOX_CREDENTIALS);
 const updatesChannel = supabase.channel("updates")
@@ -33,22 +34,18 @@ async function deleteRequest(request: Requests) {
 }
 
 async function getAvailableBot(): Promise<{ success: true, credential: { opencloudAPIKey: string, accountCookie: string, userId: string } } | { success: false, errors: { message: string, code: string }[] }> {
-    let availableCredentials = [...PARSED_ROBLOX_CREDENTIALS];
-    while (availableCredentials.length > 0) {
-        const randomIndex = Math.floor(Math.random() * availableCredentials.length);
-        const choosenCredential = availableCredentials[randomIndex];
+    const availableCredentials = await getBots();
+    for (const credential of availableCredentials) {
         const response = await fetch(`https://publish.roblox.com/v1/asset-quotas?resourceType=RateLimitUpload&assetType=Audio`, {
-            headers: { 'Cookie': `.ROBLOSECURITY=${choosenCredential.accountCookie}` }
+            headers: { 'Cookie': `.ROBLOSECURITY=${credential.decrypted_secret.accountCookie}` }
         });
         const data = await response.json();
         if (data.errors?.[0].message === "User is moderated") {
-            console.warn(`[ ! ] Bot ${choosenCredential.userId} has a moderation action. Picking another bot...`);
-            availableCredentials.splice(randomIndex, 1);
+            console.warn(`[ ! ] ${credential.description} has a moderation action. Picking another bot...`);
             continue;
         }
-        console.log(`Bot ${choosenCredential.userId} has ${data.quotas[0].capacity - data.quotas[0].usage}/${data.quotas[0].capacity} audio uploads remaining`);
-        if (data.quotas[0].usage < data.quotas[0].capacity) return { success: true, credential: choosenCredential };
-        availableCredentials.splice(randomIndex, 1);
+        console.log(`${credential.description} has ${data.quotas[0].capacity - data.quotas[0].usage}/${data.quotas[0].capacity} audio uploads remaining`);
+        if (data.quotas[0].usage < data.quotas[0].capacity) return { success: true, credential: credential.decrypted_secret };
     }
     return { success: false, errors: [{ message: 'No bots are available to handle this request', code: 'no_bots_available' }] };
 }
