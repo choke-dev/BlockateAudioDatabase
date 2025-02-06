@@ -42,9 +42,11 @@ async function getAvailableBot(): Promise<{ success: true, credential: { openclo
 
         switch(data.errors?.[0].message) {
             case "User is moderated":
+                console.dir(data);
                 console.warn(`[ ! ] ${credential.description} has a moderation action. Picking another bot...`);
                 continue;
             case "User is not authenticated":
+                console.dir(data);
                 console.warn(`[ ! ] ${credential.description}'s cookie is invalid. Picking another bot...`);
                 continue;
         }
