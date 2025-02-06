@@ -49,7 +49,6 @@ async function getAvailableBot(): Promise<{ success: true, credential: { openclo
                 console.warn(`[ ! ] ${credential.description}'s cookie is invalid. Picking another bot...`);
                 continue;
         }
-
         console.log(`${credential.description} has ${data.quotas[0].capacity - data.quotas[0].usage}/${data.quotas[0].capacity} audio uploads remaining`);
         if (data.quotas[0].usage < data.quotas[0].capacity) return { success: true, credential: credential.decrypted_secret };
     }
