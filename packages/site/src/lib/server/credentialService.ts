@@ -19,12 +19,6 @@ const credentialsCache: {
     cacheExpiration: 0,
     credentials: []
 };
-const channel = supabase.channel("updates")
-
-channel.on("broadcast", { event: "forceCredentialsUpdate" }, () => {
-    console.log("[ CREDENTIAL SERVICE ] Received forceCredentialsUpdate event, clearing cache...")
-    credentialsCache.cacheExpiration = 0
-}).subscribe();
 
 export const getBots = async (): Promise<Credentials[]> => {
 
@@ -41,7 +35,7 @@ export const getBots = async (): Promise<Credentials[]> => {
             decrypted_secret: JSON.parse(String(x.decrypted_secret))
         }))
 
-        return data
+        return credentialsCache.credentials
     } else {
         console.log("[ CREDENTIAL SERVICE ] Cache hit, returning cached credentials...")
         return credentialsCache.credentials
