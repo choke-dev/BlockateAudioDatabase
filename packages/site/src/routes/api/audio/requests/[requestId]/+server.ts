@@ -40,10 +40,15 @@ async function getAvailableBot(): Promise<{ success: true, credential: { openclo
             headers: { 'Cookie': `.ROBLOSECURITY=${credential.decrypted_secret.accountCookie}` }
         });
         const data = await response.json();
-        if (data.errors?.[0].message === "User is moderated") {
-            console.warn(`[ ! ] ${credential.description} has a moderation action. Picking another bot...`);
-            continue;
+        switch(data.errors?.[0]) {
+            case 'User is moderated':
+                console.warn(`[ ! ] ${credential.description} has a moderation action. Picking another bot... `)
+                continue;
+            case 'User is not authenticated':
+                console.warn(`[ ! ] ${credential.description}'s account cookie is invalid. Picking another bot...`)
+                continue;
         }
+        
         console.log(`${credential.description} has ${data.quotas[0].capacity - data.quotas[0].usage}/${data.quotas[0].capacity} audio uploads remaining`);
         if (data.quotas[0].usage < data.quotas[0].capacity) return { success: true, credential: credential.decrypted_secret };
     }
