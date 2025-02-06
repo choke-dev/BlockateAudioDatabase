@@ -25,7 +25,7 @@ export const getBots = async (): Promise<Credentials[]> => {
     if (credentialsCache.cacheExpiration < Date.now()) {
         // cache expired
         console.log("[ CREDENTIAL SERVICE ] Cache miss, fetching for potentially new credentials...")
-        const data: Credentials[] = await prisma.$queryRaw`
+        const data: { description: string, decrypted_secret: Credential }[] = await prisma.$queryRaw`
             select description, decrypted_secret from vault.decrypted_secrets;
         `
 
