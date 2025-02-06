@@ -1,19 +1,17 @@
 export const _maxDuration = 60;
 
-import { ROBLOX_CREDENTIALS } from "$env/static/private";
+import { generateAcceptNotification, generateRejectNotification } from "$lib/config/bot";
 import { uploadConfig } from "$lib/config/upload";
 import { whitelistAssetToUser } from "$lib/server/audioUploader";
+import { getBots } from "$lib/server/credentialService";
 import { prisma, supabase } from "$lib/server/db";
+import type { Requests } from "@prisma/client";
 import { fileTypeFromBuffer } from "file-type";
 import { unlink, writeFileSync } from "fs";
 import { AssetsApi } from "openblox/cloud";
-import { setConfig } from "openblox/config";
+import { HttpError } from "openblox/http";
 import { join } from "path";
 import type { RequestEvent } from "./$types";
-import { generateAcceptNotification, generateRejectNotification } from "$lib/config/bot";
-import type { Requests } from "@prisma/client";
-import { HttpError } from "openblox/http";
-import { getBots } from "$lib/server/credentialService";
 
 const updatesChannel = supabase.channel("updates")
 
@@ -65,7 +63,6 @@ async function acceptRequest(event: RequestEvent) {
 
     if (!choosenCredential.success) return new Response(JSON.stringify({ success: false, errors: [{ message: 'No bots are available to handle this request', code: 'no_bots_available' }] }), { status: 503 });
 
-    setConfig({ cloudKey: choosenCredential.credential.opencloudAPIKey });
 
     const audioRegexMatch = request.fileName.match(uploadConfig.fileNameRegex);
     if (!audioRegexMatch) {
@@ -84,7 +81,7 @@ async function acceptRequest(event: RequestEvent) {
     writeFileSync(tempFilePath, Uint8Array.from(buffer), "binary");
 
     try {
-        const asset = await AssetsApi.createAsset({
+        const asset = await AssetsApi.createAsset.bind({ cloudKey: choosenCredential.credential.opencloudAPIKey })({
             assetType: 'Audio',
             displayName: uploadConfig.audioDisplayName.replace("{audioName}", audioName).replace("{audioCategory}", audioCategory),
             description: uploadConfig.descriptionTemplate.replace("{audioName}", audioName).replace("{audioCategory}", audioCategory),
