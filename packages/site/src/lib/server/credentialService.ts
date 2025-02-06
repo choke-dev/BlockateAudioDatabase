@@ -1,5 +1,5 @@
 import { CACHE_TTL } from "$lib/config/credentialService";
-import { prisma } from "./db";
+import { prisma, supabase } from "./db";
 
 interface Credential {
     opencloudAPIKey: string;
@@ -12,7 +12,6 @@ interface Credentials {
     decrypted_secret: Credential;
 }
 
-
 const credentialsCache: { 
     cacheExpiration: number;
     credentials: Credentials[]
@@ -20,6 +19,12 @@ const credentialsCache: {
     cacheExpiration: 0,
     credentials: []
 };
+const channel = supabase.channel("updates")
+
+channel.on("broadcast", { event: "forceCredentialsUpdate" }, () => {
+    console.log("[ CREDENTIAL SERVICE ] Received forceCredentialsUpdate event, clearing cache...")
+    credentialsCache.cacheExpiration = 0
+}).subscribe();
 
 export const getBots = async (): Promise<Credentials[]> => {
 
