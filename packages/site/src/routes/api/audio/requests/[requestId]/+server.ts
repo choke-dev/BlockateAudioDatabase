@@ -15,7 +15,6 @@ import type { Requests } from "@prisma/client";
 import { HttpError } from "openblox/http";
 import { getBots } from "$lib/server/credentialService";
 
-const PARSED_ROBLOX_CREDENTIALS: { opencloudAPIKey: string, accountCookie: string, userId: string }[] = JSON.parse(ROBLOX_CREDENTIALS);
 const updatesChannel = supabase.channel("updates")
 
 async function deleteRequest(request: Requests) {
