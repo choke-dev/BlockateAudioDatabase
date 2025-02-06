@@ -55,7 +55,7 @@
 		query = undefined;
 
 		lastSearchKeyword = keyword;
-		const response = await fetch(`/?keyword=${encodeURIComponent(lastSearchKeyword)}&page=${currentPage}`, {
+		const response = await fetch(`/api/search?keyword=${encodeURIComponent(lastSearchKeyword)}&page=${currentPage}`, {
 			method: 'POST',
 			body: JSON.stringify(filters),
 		});
