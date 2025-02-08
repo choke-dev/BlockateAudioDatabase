@@ -13,6 +13,7 @@ import { inspect } from 'util';
 import { srcDir } from './constants';
 
 // Set default behavior to bulk overwrite
+ApplicationCommandRegistries.setDefaultGuildIds(["1175226662745546793"])
 ApplicationCommandRegistries.setDefaultBehaviorWhenNotIdentical(RegisterBehavior.BulkOverwrite);
 
 // Read env var
@@ -28,6 +29,7 @@ declare module '@skyra/env-utilities' {
 	interface Env {
 		OWNERS: ArrayString;
 		DATABASE_URL: string;
-		DATABASE_KEY: string;
+		SUPABASE_KEY: string;
+		SUPABASE_URL: string;
 	}
 }

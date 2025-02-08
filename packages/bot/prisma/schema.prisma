@@ -1,0 +1,115 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Audio {
+  id                String @id // never use bigint on this
+  name              String
+  category          String
+  whitelisterName   String
+  whitelisterUserId BigInt
+
+  created_at DateTime @default(now()) @db.Timestamptz()
+  updated_at DateTime @default(now()) @db.Timestamptz()
+}
+
+model Requests {
+  id     String @id @default(uuid())
+  userId String
+
+  fileName     String
+  filePath     String
+  fullFilePath String
+
+  createdAt DateTime @default(now())
+
+  User User @relation(fields: [userId], references: [id])
+  RequestUpdates RequestUpdates[]
+}
+
+model RequestUpdates {
+  id     String @id
+
+  status     String
+  reason     String?
+  
+  createdAt  DateTime @default(now())
+
+  Requests Requests @relation(fields: [id], references: [id])
+}
+
+model UploadedAudio {
+  id       String @id @default(uuid())
+  name     String
+  category String
+
+  uploaderUserId  String
+  requesterUserId String  @default("0")
+  groupId         BigInt?
+
+  grantedUsePermissions Boolean @default(false)
+  isProcessed           Boolean @default(false)
+  isModerated           Boolean @default(false)
+  inModerationQueue Boolean @default(true)
+
+  uploadedAt DateTime @default(now())
+
+  User User @relation(fields: [requesterUserId], references: [id])
+}
+
+// Authentication
+model State {
+  id           String   @id @default(uuid())
+  state        String
+  codeVerifier String
+  createdAt    DateTime @default(now())
+  expiresAt    DateTime @default(dbgenerated("(now() + '00:01:00'::interval)"))
+}
+
+model Token {
+  id                   String   @id @default(uuid())
+  accessToken          String
+  tokenType            String
+  tokenScopes          String[]
+  refreshToken         String
+  createdAt            DateTime
+  userId               String
+  accessTokenExpiresAt DateTime
+  User                 User     @relation(fields: [userId], references: [id])
+}
+
+model User {
+  id           String   @id
+  username     String
+  global_name  String?
+  avatar       String?
+  bot          String?
+  system       String?
+  mfa_enabled  Boolean?
+  banner       String?
+  accent_color BigInt?
+  locale       String?
+  flags        BigInt?
+  premium_type BigInt?
+  public_flags BigInt?
+
+  sessions      Session[]
+  tokens        Token[]
+  requests      Requests[]
+  uploadedAudio UploadedAudio[]
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  createdAt DateTime @default(now())
+  expires   DateTime @default(dbgenerated("(now() + '7 days'::interval)"))
+  hash      String
+  User      User     @relation(fields: [userId], references: [id])
+}

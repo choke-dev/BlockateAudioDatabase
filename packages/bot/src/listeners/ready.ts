@@ -2,7 +2,6 @@ import { ApplyOptions } from '@sapphire/decorators';
 import { Listener } from '@sapphire/framework';
 import type { StoreRegistryValue } from '@sapphire/pieces';
 import { blue, gray, green, magenta, magentaBright, white, yellow } from 'colorette';
-import { supabase } from '../lib/database';
 
 const dev = process.env.NODE_ENV !== 'production';
 
@@ -13,21 +12,6 @@ export class UserEvent extends Listener {
 	public override run() {
 		this.printBanner();
 		this.printStoreDebugInformation();
-		this.listenToSupabase();
-	}
-
-	private listenToSupabase() {
-		const channel = supabase.channel("updates")
-
-		channel.on("broadcast", { event: "*" }, (metadata) => {
-			const payload = metadata.payload;
-
-			this.container.client.users.fetch(payload.userId).then(user => {
-			    user.send(payload.messageData);
-			}).catch(console.error);
-
-		}).subscribe();
-
 	}
 
 	private printBanner() {
