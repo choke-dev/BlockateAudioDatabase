@@ -109,8 +109,8 @@ async function acceptRequest(event: RequestEvent) {
 
             updatesChannel.send({
                 type: "broadcast",
-                event: "audio_request_accepted",
-                payload: generateAcceptNotification(request.userId, { name: audioName, category: audioCategory })
+                event: "audio_request_update",
+                payload: generateAcceptNotification(request.userId, { id: assetId, name: audioName, category: audioCategory })
             })
 
             unlink(tempFilePath, err => {
@@ -147,7 +147,7 @@ async function rejectRequest(event: RequestEvent) {
     const [audioCategory, audioName] = [audioRegexMatch[1].slice(0, 1000), audioRegexMatch[2].slice(0, 50)];
         updatesChannel.send({
             type: "broadcast",
-            event: "audio_request_rejected",
+            event: "audio_request_update",
             payload: generateRejectNotification(request.userId, { name: audioName, category: audioCategory })
         })
     return new Response(JSON.stringify({ success: true }));

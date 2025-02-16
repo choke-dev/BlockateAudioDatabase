@@ -6,14 +6,14 @@ import type { RequestHandler } from "./$types";
 import { RATELIMIT_SECRET } from "$env/static/private";
 
 export const _limiter = new RetryAfterRateLimiter({
-    IP: [1, 's'],
-    IPUA: [3, 's'],
-    cookie: {
-      name: 'limiterId',
-      secret: RATELIMIT_SECRET,
-      rate: [5, 's'],
-      preflight: true
-    }
+    IP: [5, 's'],
+    // IPUA: [3, 's'],
+    // cookie: {
+    //   name: 'limiterId',
+    //   secret: RATELIMIT_SECRET,
+    //   rate: [5, 's'],
+    //   preflight: true,
+    // }
 });
 
 export const POST: RequestHandler = async (event) => {
