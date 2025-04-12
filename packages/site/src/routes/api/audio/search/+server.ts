@@ -1,7 +1,7 @@
 import { MAX_SEARCH_RESULTS_PER_PAGE } from "$lib/config/search";
 import { RetryAfterRateLimiter } from 'sveltekit-rate-limiter/server';
 import { prisma } from "$lib/server/db";
-import { SearchFilterSchema } from "$lib/zodSchemas";
+import { SearchFilterSchema, SearchRequestSchema } from "$lib/zodSchemas";
 import type { RequestHandler } from "./$types";
 import { RATELIMIT_SECRET } from "$env/static/private";
 
@@ -56,22 +56,41 @@ export const POST: RequestHandler = async (event) => {
         }
 
         const parsedRequestBody = await event.request.json();
-        const requestBody = SearchFilterSchema.safeParse(parsedRequestBody);
+        const requestBody = SearchRequestSchema.safeParse(parsedRequestBody);
 
         let filterConditions: Record<string, { contains: string; mode: 'insensitive' }>[] = [];
+        let sortOption = {};
+        let filterType = "AND";
+        
         if (requestBody.success) {
-            const filterData = requestBody.data!.filters;
-            filterConditions = filterData.map(({ label, value, inputValue }: { label: string; value: string; inputValue: string }) => {
-                return {
-                    [value]: {
-                        contains: inputValue,
-                        mode: 'insensitive',
-                    },
+            // Handle filters
+            if (requestBody.data!.filters && requestBody.data!.filters.filters) {
+                const filterData = requestBody.data!.filters.filters;
+                filterConditions = filterData.map(({ label, value, inputValue }: { label: string; value: string; inputValue: string }) => {
+                    return {
+                        [value]: {
+                            contains: inputValue,
+                            mode: 'insensitive',
+                        },
+                    };
+                });
+                
+                // Set filter type (AND/OR)
+                if (requestBody.data!.filters.type) {
+                    filterType = requestBody.data!.filters.type.toUpperCase();
+                }
+            }
+            
+            // Handle sort
+            if (requestBody.data!.sort) {
+                const { field, order } = requestBody.data!.sort;
+                sortOption = {
+                    orderBy: {
+                        [field]: order
+                    }
                 };
-            }); 
+            }
         }
-
-        console.log(filterConditions)
 
         const audios = await prisma.audio.findMany({
             where: {
@@ -79,10 +98,11 @@ export const POST: RequestHandler = async (event) => {
                     contains: query,
                     mode: 'insensitive',
                 } : undefined,
-                [requestBody.data ? requestBody.data.filterType.toUpperCase() : 'AND']: filterConditions,
+                [filterType]: filterConditions,
             },
             skip: (currentPage - 1) * MAX_SEARCH_RESULTS_PER_PAGE,
             take: MAX_SEARCH_RESULTS_PER_PAGE,
+            ...sortOption
         });
 
         
@@ -94,7 +114,7 @@ export const POST: RequestHandler = async (event) => {
                     contains: query,
                     mode: 'insensitive',
                 } : undefined,
-                [requestBody.data ? requestBody.data.filterType.toUpperCase() : 'AND']: filterConditions,
+                [filterType]: filterConditions,
             },
         });
 
