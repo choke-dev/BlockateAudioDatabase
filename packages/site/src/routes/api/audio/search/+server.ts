@@ -66,14 +66,18 @@ export const POST: RequestHandler = async (event) => {
             // Handle filters
             if (requestBody.data!.filters && requestBody.data!.filters.filters) {
                 const filterData = requestBody.data!.filters.filters;
-                filterConditions = filterData.map(({ label, value, inputValue }: { label: string; value: string; inputValue: string }) => {
-                    return {
-                        [value]: {
-                            contains: inputValue,
-                            mode: 'insensitive',
-                        },
-                    };
-                });
+                
+                // Only add filters with non-empty inputValue
+                filterConditions = filterData
+                    .filter(({ inputValue }) => inputValue.trim() !== '')
+                    .map(({ label, value, inputValue }: { label: string; value: string; inputValue: string }) => {
+                        return {
+                            [value]: {
+                                contains: inputValue.trim(),
+                                mode: 'insensitive',
+                            },
+                        };
+                    });
                 
                 // Set filter type (AND/OR)
                 if (requestBody.data!.filters.type) {
@@ -92,14 +96,24 @@ export const POST: RequestHandler = async (event) => {
             }
         }
 
+        // Construct the where clause
+        const whereClause: any = {};
+        
+        // Add name search if query exists
+        if (query) {
+            whereClause.name = {
+                contains: query,
+                mode: 'insensitive',
+            };
+        }
+        
+        // Add filter conditions if they exist
+        if (filterConditions.length > 0) {
+            whereClause[filterType] = filterConditions;
+        }
+        
         const audios = await prisma.audio.findMany({
-            where: {
-                name: query ? {
-                    contains: query,
-                    mode: 'insensitive',
-                } : undefined,
-                [filterType]: filterConditions,
-            },
+            where: whereClause,
             skip: (currentPage - 1) * MAX_SEARCH_RESULTS_PER_PAGE,
             take: MAX_SEARCH_RESULTS_PER_PAGE,
             ...sortOption
@@ -109,13 +123,7 @@ export const POST: RequestHandler = async (event) => {
 
         // Fetch total count of audios that match the query
         const total = await prisma.audio.count({
-            where: {
-                name: query ? {
-                    contains: query,
-                    mode: 'insensitive',
-                } : undefined,
-                [filterType]: filterConditions,
-            },
+            where: whereClause,
         });
 
         // Return the results and total count
