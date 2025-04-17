@@ -1,7 +1,7 @@
 import * as ClassicFriendsApi from "openblox/classic/friends";
 import { setConfig } from "openblox/config";
 
-const WHITELIST_BOT_USERID = 4572614730
+const WHITELIST_BOT_USERID = 196632240
 
 async function getXCSRFToken(accountCookie: string) {
     const response = await fetch("https://auth.roblox.com/v2/login", {
@@ -32,6 +32,7 @@ export async function whitelistAssetToUser(credentials: { opencloudAPIKey: strin
     const isFriendedWithBot = await isFriendsWithWhitelistBot(credentials);
     if (!isFriendedWithBot) {
         console.log("Sending friend request to whitelist bot...")
+        setConfig({ cookie: credentials.accountCookie, cloudKey: credentials.opencloudAPIKey })
         await ClassicFriendsApi.authenticatedUserRequestFriendship.bind({ cookie: credentials.accountCookie, cloudKey: credentials.opencloudAPIKey })({
             userId: WHITELIST_BOT_USERID,
             originSourceType: "UserProfile",

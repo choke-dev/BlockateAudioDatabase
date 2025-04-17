@@ -6,6 +6,7 @@ export const AudioSchema = z.object({
     category: z.string(),
     whitelisterName: z.string(),
     whitelisterUserId: z.number(),
+    whitelisterType: z.string(),
 })
 
 export const BatchPatchAudioSchema = z.record(

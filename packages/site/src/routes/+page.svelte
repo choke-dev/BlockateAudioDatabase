@@ -16,6 +16,7 @@
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
+	import { buildWhitelisterUrl } from '$lib/whitelister';
 
 	let errors = $state<{ message: string }[]>([]);
 	let searchResults: Audio[] = $state([]);
@@ -191,7 +192,7 @@
 						<Table.Head class="text-right">
 							<a
 								class="underline underline-offset-2 transition-colors duration-200 hover:text-white"
-								href={`https://www.roblox.com/users/${audio.whitelisterUserId}/profile`}
+								href={buildWhitelisterUrl(audio.whitelisterType, audio.whitelisterUserId)}
 							>
 								{audio.whitelisterName}
 							</a>

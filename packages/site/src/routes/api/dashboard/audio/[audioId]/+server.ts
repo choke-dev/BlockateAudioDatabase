@@ -44,7 +44,8 @@ export const PATCH = async ({ request, params }) => {
             name: parsedRequest.name,
             category: parsedRequest.category,
             whitelisterName: parsedRequest.whitelisterName,
-            whitelisterUserId: parsedRequest.whitelisterUserId
+            whitelisterUserId: parsedRequest.whitelisterUserId,
+            whitelisterType: parsedRequest.whitelisterType
         }
     }).catch (error => {
         if (error instanceof PrismaClientKnownRequestError) {

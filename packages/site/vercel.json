@@ -1,0 +1,6 @@
+{
+    "env": {
+      "PUBLIC_GIT_COMMIT_SHA": "@vercel/git-commit-sha"
+    }
+  }
+  

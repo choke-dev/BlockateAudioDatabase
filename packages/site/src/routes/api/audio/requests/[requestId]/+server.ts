@@ -30,7 +30,7 @@ async function deleteRequest(request: Requests) {
     }
 }
 
-async function getAvailableBot(): Promise<{ success: true, credential: { opencloudAPIKey: string, accountCookie: string, userId: string } } | { success: false, errors: { message: string, code: string }[] }> {
+async function getAvailableBot(): Promise<{ success: true, credential: { opencloudAPIKey: string, accountCookie: `_|WARNING:-DO-NOT-SHARE-THIS.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items.|${string}`, userId: string } } | { success: false, errors: { message: string, code: string }[] }> {
     const availableCredentials = await getBots();
     for (const credential of availableCredentials) {
         const response = await fetch(`https://publish.roblox.com/v1/asset-quotas?resourceType=RateLimitUpload&assetType=Audio`, {

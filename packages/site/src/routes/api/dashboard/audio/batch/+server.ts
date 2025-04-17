@@ -43,7 +43,8 @@ export const POST = async ({ request }) => {
         name: audio.name,
         category: audio.category,
         whitelisterName: audio.whitelisterName,
-        whitelisterUserId: parseInt(audio.whitelisterUserId, 10).toString()
+        whitelisterUserId: parseInt(audio.whitelisterUserId, 10).toString(),
+        whitelisterType: audio.whitelisterType
     }));
 
     // Find existing rows
@@ -101,7 +102,8 @@ export const PATCH = async ({ request }) => {
                 name: audio.name,
                 category: audio.category,
                 whitelisterName: audio.whitelisterName,
-                whitelisterUserId: audio.whitelisterUserId
+                whitelisterUserId: audio.whitelisterUserId,
+                whitelisterType: audio.whitelisterType
             } 
         })
     )).catch (error => {
