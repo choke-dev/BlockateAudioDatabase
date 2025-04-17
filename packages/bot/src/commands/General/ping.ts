@@ -4,6 +4,7 @@ import { send } from '@sapphire/plugin-editable-commands';
 import { ApplicationCommandType, ApplicationIntegrationType, InteractionContextType, type Message } from 'discord.js';
 
 @ApplyOptions<Command.Options>({
+	enabled: false,
 	description: 'ping pong'
 })
 export class UserCommand extends Command {

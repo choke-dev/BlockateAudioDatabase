@@ -6,7 +6,7 @@
   "license": "UNLICENSE",
   "type": "commonjs",
   "dependencies": {
-    "@prisma/client": "6.3.1",
+    "@prisma/client": "6.6.0",
     "@sapphire/decorators": "^6.1.1",
     "@sapphire/discord-utilities": "^3.4.4",
     "@sapphire/discord.js-utilities": "7.3.2",
@@ -33,14 +33,14 @@
     "@types/ws": "^8.5.13",
     "npm-run-all2": "^7.0.2",
     "prettier": "^3.4.2",
-    "prisma": "^6.3.1",
+    "prisma": "^6.6.0",
     "tsc-watch": "^6.3.0",
     "typescript": "~5.4.5"
   },
   "scripts": {
     "sapphire": "sapphire",
     "generate": "sapphire generate",
-    "build": "tsc",
+    "build": "rm -rf dist & tsc",
     "watch": "tsc -w",
     "start": "node dist/index.js",
     "dev": "run-s build start",
@@ -50,7 +50,11 @@
   "prettier": "@sapphire/prettier-config",
   "pnpm": {
     "onlyBuiltDependencies": [
-      "@sapphire/type"
+      "@prisma/client",
+      "@prisma/engines",
+      "@sapphire/type",
+      "esbuild",
+      "prisma"
     ]
   }
 }
