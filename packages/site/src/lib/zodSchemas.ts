@@ -46,5 +46,5 @@ export const SearchFilterSchema = z.object({
         })
     ),
     filterType: z.enum(["and", "or"]),
-    sort: SortSchema.optional()
+    sort: SearchSortSchema.optional()
 });
