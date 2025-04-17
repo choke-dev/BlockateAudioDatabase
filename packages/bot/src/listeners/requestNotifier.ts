@@ -3,8 +3,7 @@ import { Listener } from '@sapphire/framework';
 import { supabase } from '../lib/database';
 
 const EVENTS_TO_LISTEN = [
-    "audio_request_accepted",
-    "audio_requests_moderated"
+    "audio_request_update",
 ]
 
 @ApplyOptions<Listener.Options>({
