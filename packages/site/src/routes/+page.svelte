@@ -29,7 +29,6 @@
 	let totalItems = $state(0); // Total number of items (total audios found)
 	let filters = $state<{ filters: { label: string; value: string; inputValue: string }[], type: 'and' | 'or' }>({ filters: [], type: 'and' });
 	let sort = $state<{ field: string, order: 'asc' | 'desc' } | null>(null);
-	let sort = $state<{ field: string, order: 'asc' | 'desc' } | null>(null);
 
 	async function handleSearch(event?: Event) {
 		event?.preventDefault();
