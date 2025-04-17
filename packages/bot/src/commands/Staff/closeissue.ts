@@ -3,11 +3,11 @@ import { Command } from '@sapphire/framework';
 import { ChannelType } from 'discord.js';
 
 //@ts-ignore
-const ISSUES_FORUM_CHANNEL_ID = "1316657847374712872";
+export const ISSUES_FORUM_CHANNEL_ID = "1316657847374712872";
 
 @ApplyOptions<Command.Options>({
 	description: 'Closes an issue',
-	preconditions: ['StaffOnly']
+	preconditions: [ ['StaffOnly', "ThreadOwner"] ]
 })
 export class UserCommand extends Command {
 	public override registerApplicationCommands(registry: Command.Registry) {

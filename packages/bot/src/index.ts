@@ -1,7 +1,15 @@
 import './lib/setup';
 
 import { LogLevel, SapphireClient } from '@sapphire/framework';
+import { getRandomValues } from 'crypto';
 import { GatewayIntentBits, Partials } from 'discord.js';
+
+const pickRandomPort = () => {
+	const randomArray = new Uint32Array(1);
+	getRandomValues(randomArray);
+	const randomPort = randomArray[0] % (65535 - 49152 + 1) + 49152;
+	return randomPort;
+}
 
 const client = new SapphireClient({
 	defaultPrefix: '!',
@@ -9,6 +17,11 @@ const client = new SapphireClient({
 	caseInsensitiveCommands: true,
 	logger: {
 		level: LogLevel.Debug
+	},
+	api: {
+		listenOptions: {
+			port: pickRandomPort()
+		}
 	},
 	shards: 'auto',
 	intents: [
@@ -24,7 +37,7 @@ const client = new SapphireClient({
 		GatewayIntentBits.MessageContent
 	],
 	partials: [Partials.Channel],
-	loadMessageCommandListeners: true
+	loadMessageCommandListeners: true,
 });
 
 const main = async () => {

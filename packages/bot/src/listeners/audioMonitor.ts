@@ -6,8 +6,27 @@ import { prisma, supabase } from '../lib/database';
 
 type AudioInformationResponse = {
     id: string,
+    type: 'Audio',
+    typeId: 3,
+    name: string,
+    description: string,
+    creator: {
+        type: 'User',
+        typeId: 1,
+        targetId: number,
+    },
+    genres: Array<string>,
+    created: string,
+    updated: string,
+    enableComments: boolean,
+    isCopyingAllowed: boolean,
+    isPublicDomainEnabled: boolean,
+    moderationStatus: 'Green' | 'Yellow' | 'Red',
+    isModerated: boolean,
     reviewStatus: 'Finished' | 'InReview' | 'NotReviewed',
-    isModerated: boolean
+    isVersioningEnabled: boolean,
+    isArchivable: boolean,
+    canHaveThumbnail: boolean,
 }[]
 
 @ApplyOptions<Listener.Options>({
@@ -20,21 +39,26 @@ export class UserEvent extends Listener {
 
     public override async run() {
         this.taskLoop();
-        setInterval(this.taskLoop.bind(this), 10 * 60 * 1000);
+        setInterval(this.taskLoop.bind(this), 5 * 60 * 1000);
     }
 
     private async taskLoop() {
-        const audios = await this.retrieveAudios()
+        
+        try {
+            const audios = await this.retrieveAudios()
 
-        const groupedAudios = audios.reduce((acc, curr) => {
-            const key = curr.uploaderUserId
-            if (!acc[key]) acc[key] = []
-            acc[key].push(curr)
-            return acc
-        }, {} as Record<string, typeof audios>)
+            const groupedAudios = audios.reduce((acc, curr) => {
+                const key = curr.uploaderUserId
+                if (!acc[key]) acc[key] = []
+                acc[key].push(curr)
+                return acc
+            }, {} as Record<string, typeof audios>)
 
-        for (const audio in groupedAudios) {
-            await this.checkAudios(audio, groupedAudios[audio])
+            for (const audio in groupedAudios) {
+                await this.checkAudios(audio, groupedAudios[audio])
+        }
+        } catch (error) {   
+            console.log(error)
         }
         
     }
@@ -58,12 +82,54 @@ export class UserEvent extends Listener {
         })
 
         if (isModerated) {
-            const moderationNotification = this.generateModerationNotification(audios[0].requesterUserId, audios);
-            this.updatesChannel.send({
-                type: "broadcast",
-                event: "audio_requests_moderated",
-                payload: moderationNotification
-            })
+            const grouped = audios.reduce((acc, curr) => {
+                const key = curr.requesterUserId
+                if (!acc[key]) acc[key] = []
+                acc[key].push(curr)
+                return acc
+            }, {} as Record<string, typeof audios>)
+
+            for (const requesterUserId in grouped) {
+                const moderationNotification = this.generateModerationNotification(requesterUserId, grouped[requesterUserId]);
+                this.updatesChannel.send({
+                    type: "broadcast",
+                    event: "audio_request_update",
+                    payload: moderationNotification
+                })
+            }
+        } else {
+            const grouped = audios.reduce((acc, curr) => {
+                const key = curr.requesterUserId
+                if (!acc[key]) acc[key] = []
+                acc[key].push(curr)
+                return acc
+            }, {} as Record<string, typeof audios>)
+
+            for (const requesterUserId in grouped) {
+                this.updatesChannel.send({
+                    type: "broadcast",
+                    event: "audio_request_update",
+                    payload: {
+                        userId: requesterUserId,
+                        messageData: {
+                            "content": null,
+                            "embeds": [
+                              {
+                                "title": ":white_check_mark: Your requested audio(s) were whitelisted",
+                                "description": "We've automatically detected that the following audio you requested for whitelisting earlier has passed moderation and have been whitelisted.\n\nThe following is a list of audios that were whitelisted.",   
+                                "color": 3908957,
+                                "fields": [
+                                    {
+                                        "name": "Whitelisted audios",
+                                        "value": grouped[requesterUserId].map(audio => `- [${audio.id}] ${audio.category} - ${audio.name}`).join('\n')
+                                    }
+                                ]
+                              }
+                            ]
+                          }
+                    }
+                })
+            }
         }
 
     }
@@ -84,7 +150,7 @@ export class UserEvent extends Listener {
             }
         })
 
-        const moderatedAudios = data.filter(audio => audio.reviewStatus == 'Finished' && audio.isModerated)
+        const moderatedAudios = data.filter(audio => audio.reviewStatus == 'Finished' && (audio.isModerated || audio.description.includes("(Removed for violations of Roblox Terms of Use)")))
         const approvedAudios = data.filter(audio => audio.reviewStatus == 'Finished' && !audio.isModerated)
 
         this.handleAudioModeration(audios.filter(x => moderatedAudios.find(y => y.id == x.id)), true)

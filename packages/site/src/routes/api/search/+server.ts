@@ -59,7 +59,10 @@ export const POST: RequestHandler = async (event) => {
         const requestBody = SearchFilterSchema.safeParse(parsedRequestBody);
 
         let filterConditions: Record<string, { contains: string; mode: 'insensitive' }>[] = [];
+        let sortOption: { [key: string]: 'asc' | 'desc' } | undefined = undefined;
+        
         if (requestBody.success) {
+            // Process filters
             const filterData = requestBody.data!.filters;
             filterConditions = filterData.map(({ label, value, inputValue }: { label: string; value: string; inputValue: string }) => {
                 return {
@@ -68,23 +71,27 @@ export const POST: RequestHandler = async (event) => {
                         mode: 'insensitive',
                     },
                 };
-            }); 
+            });
+            
+            // Process sort
+            if (requestBody.data!.sort) {
+                sortOption = {
+                    [requestBody.data!.sort.field]: requestBody.data!.sort.order
+                };
+            }
         }
-
-        console.log(filterConditions)
-
-        const audios = await prisma.audio.findMany({
-            where: {
-                name: query ? {
-                    contains: query,
-                    mode: 'insensitive',
-                } : undefined,
-                [requestBody.data ? requestBody.data.filterType.toUpperCase() : 'AND']: filterConditions,
-            },
-            skip: (currentPage - 1) * MAX_SEARCH_RESULTS_PER_PAGE,
-            take: MAX_SEARCH_RESULTS_PER_PAGE,
-        });
-
+const audios = await prisma.audio.findMany({
+    where: {
+        name: query ? {
+            contains: query,
+            mode: 'insensitive',
+        } : undefined,
+        [requestBody.data ? requestBody.data.filterType.toUpperCase() : 'AND']: filterConditions,
+    },
+    orderBy: sortOption,
+    skip: (currentPage - 1) * MAX_SEARCH_RESULTS_PER_PAGE,
+    take: MAX_SEARCH_RESULTS_PER_PAGE,
+});
         
 
         // Fetch total count of audios that match the query
