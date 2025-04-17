@@ -1,8 +1,13 @@
+import * as ClassicFriendsApi from "openblox/classic/friends";
+import { setConfig } from "openblox/config";
+
+const WHITELIST_BOT_USERID = 4572614730
+
 async function getXCSRFToken(accountCookie: string) {
-    const response = await fetch("https://auth.roblox.com/v2/logout", {
+    const response = await fetch("https://auth.roblox.com/v2/login", {
         method: "POST",
         headers: {
-            "cookie": `.ROBLOSECURITY=${accountCookie}`
+            "cookie": `.ROBLOSECURITY=${accountCookie}` 
         }
     })
 
@@ -14,7 +19,28 @@ async function getXCSRFToken(accountCookie: string) {
     }
 }
 
-export async function whitelistAssetToUser(credentials: { opencloudAPIKey: string, accountCookie: string }, assetId: string) {
+async function isFriendsWithWhitelistBot(credentials: { opencloudAPIKey: string, accountCookie: string, userId: string }) {
+    //@ts-ignore
+    const friendsList = await ClassicFriendsApi.friendsList.bind({ cookie: credentials.accountCookie, cloudKey: credentials.opencloudAPIKey })({ userId: credentials.userId });
+    const isFriendsWithWhitelistBot = friendsList.data.some(friend => friend.id === WHITELIST_BOT_USERID);
+    return isFriendsWithWhitelistBot;
+}
+
+export async function whitelistAssetToUser(credentials: { opencloudAPIKey: string, accountCookie: `_|WARNING:-DO-NOT-SHARE-THIS.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items.|${string}`, userId: string }, assetId: string) {
+
+    setConfig({ cloudKey: credentials.opencloudAPIKey, cookie: credentials.accountCookie });
+    const isFriendedWithBot = await isFriendsWithWhitelistBot(credentials);
+    if (!isFriendedWithBot) {
+        console.log("Sending friend request to whitelist bot...")
+        await ClassicFriendsApi.authenticatedUserRequestFriendship.bind({ cookie: credentials.accountCookie, cloudKey: credentials.opencloudAPIKey })({
+            userId: WHITELIST_BOT_USERID,
+            originSourceType: "UserProfile",
+        })
+        while (!(await isFriendsWithWhitelistBot(credentials))) {
+            console.log("Waiting for whitelist bot to accept friend request...")
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+    }
 
     const X_CSRF_TOKEN = await getXCSRFToken(credentials.accountCookie)
     if (!X_CSRF_TOKEN) {
@@ -32,7 +58,7 @@ export async function whitelistAssetToUser(credentials: { opencloudAPIKey: strin
             requests: [
                 {
                     action: "Use",
-                    subjectId: 196632240,
+                    subjectId: WHITELIST_BOT_USERID,
                     subjectType: "User"
                 }
             ]

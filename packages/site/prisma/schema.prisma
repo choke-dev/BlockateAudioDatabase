@@ -56,6 +56,7 @@ model UploadedAudio {
   grantedUsePermissions Boolean @default(false)
   isProcessed           Boolean @default(false)
   isModerated           Boolean @default(false)
+  inModerationQueue Boolean @default(true)
 
   uploadedAt DateTime @default(now())
 

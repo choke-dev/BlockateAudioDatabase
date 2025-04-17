@@ -11,6 +11,7 @@
 
 	import SearchFilter from '$lib/components/ui/custom/SearchFilter.svelte';
 	import SearchSort from '$lib/components/ui/custom/SearchSort.svelte';
+	import SearchSort from '$lib/components/ui/custom/SearchSort.svelte';
 	import { MAX_SEARCH_RESULTS_PER_PAGE } from '$lib/config/search';
 	import type { Audio } from '@prisma/client';
 	import { onMount } from 'svelte';
@@ -27,6 +28,7 @@
 	let currentPage = $state(1); // Track current page
 	let totalItems = $state(0); // Total number of items (total audios found)
 	let filters = $state<{ filters: { label: string; value: string; inputValue: string }[], type: 'and' | 'or' }>({ filters: [], type: 'and' });
+	let sort = $state<{ field: string, order: 'asc' | 'desc' } | null>(null);
 	let sort = $state<{ field: string, order: 'asc' | 'desc' } | null>(null);
 
 	async function handleSearch(event?: Event) {
@@ -57,9 +59,12 @@
 		query = undefined;
 
 		lastSearchKeyword = keyword;
-		const response = await fetch(`/api/search?keyword=${encodeURIComponent(lastSearchKeyword)}&page=${currentPage}`, {
+		const response = await fetch(`/api/audio/search?keyword=${encodeURIComponent(lastSearchKeyword)}&page=${currentPage}`, {
 			method: 'POST',
-			body: JSON.stringify({ filters, sort }),
+			body: JSON.stringify({
+				filters,
+				sort
+			}),
 		});
 		if (!response.ok) {
 			const data = await response.json();

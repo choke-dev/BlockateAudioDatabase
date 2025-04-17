@@ -20,6 +20,13 @@ const credentialsCache: {
     credentials: []
 };
 
+const channel = supabase.channel("updates")
+
+channel.on("broadcast", { event: "forceCredentialsUpdate" }, () => {
+    console.log("[ CREDENTIAL SERVICE ] Received forceCredentialsUpdate event, clearing cache...")
+    credentialsCache.cacheExpiration = 0
+}).subscribe();
+
 export const getBots = async (): Promise<Credentials[]> => {
 
     if (credentialsCache.cacheExpiration < Date.now()) {

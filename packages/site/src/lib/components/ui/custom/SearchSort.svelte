@@ -2,19 +2,22 @@
     import * as Popover from "$lib/components/ui/popover/index";
     import * as Select from "$lib/components/ui/select/index";
     import { Separator } from "$lib/components/ui/separator/index";
-
-    import LucideArrowUpDown from "~icons/lucide/arrow-up-down";
     import Button from "../button/button.svelte";
-    import LucideArrowUp from '~icons/lucide/arrow-up';
-    import LucideArrowDown from '~icons/lucide/arrow-down';
+    
+    import LucideArrowUpDown from "~icons/lucide/arrow-up-down";
 
-    const availableSortFields = [
+    const sortOptions = [
         { label: "ID", value: "id" },
         { label: "Name", value: "name" },
         { label: "Category", value: "category" },
     ];
 
-    // State for the sort options
+    const sortDirections = [
+        { label: "Ascending", value: "asc" },
+        { label: "Descending", value: "desc" },
+    ];
+
+    // State for the sort
     let sortField = $state<string>("id");
     let sortOrder = $state<"asc" | "desc">("asc");
     let appliedSort = $state<{ field: string, order: "asc" | "desc" } | null>(null);
@@ -38,70 +41,56 @@
 <div>
     <Popover.Root>
         <Popover.Trigger class="flex items-center p-2 px-4 border rounded-lg text-nowrap">
-            <Button variant={appliedSort === null ? "outline" : "default"} class="flex items-center">
-                <LucideArrowUpDown class="mr-2" />
-                {appliedSort === null ? "Sort" : `Sorted by ${availableSortFields.find(f => f.value === appliedSort.field)?.label} (${appliedSort.order === "asc" ? "A-Z" : "Z-A"})`}
-            </Button>
+            {#snippet child({ props })}
+                <Button {...props} variant={appliedSort === null ? "outline" : "default"} class="flex items-center">
+                    <LucideArrowUpDown class="mr-2" /> 
+                    {appliedSort === null ? "Sort" : `Sorted by ${sortOptions.find(opt => opt.value === appliedSort?.field)?.label} (${sortOrder === "asc" ? "Ascending" : "Descending"})`}
+                </Button>
+            {/snippet}
         </Popover.Trigger>
-        <Popover.Content class="p-4 rounded-lg shadow-lg w-[24rem]">
-            <div>
-                <h1 class="font-bold mb-2">Sort Options</h1>
+        <Popover.Content class="p-4 rounded-lg shadow-lg w-[32rem]">
+            <div class="flex items-center space-x-2 mb-4">
+                <span class="text-sm">Sort by:</span>
+                <Select.Root
+                    type="single"
+                    name="sort-field"
+                    bind:value={sortField}
+                >
+                    <Select.Trigger class="w-[180px]">
+                        {sortOptions.find(opt => opt.value === sortField)?.label || "Select field..."}
+                    </Select.Trigger>
+                    <Select.Content>
+                        {#each sortOptions as option}
+                            <Select.Item
+                                value={option.value}
+                                label={option.label}
+                            >
+                                {option.label}
+                            </Select.Item>
+                        {/each}
+                    </Select.Content>
+                </Select.Root>
                 
-                <div class="flex items-center space-x-2 mb-4">
-                    <!-- Dropdown for sort field -->
-                    <Select.Root
-                        type="single"
-                        name="sort-field"
-                        bind:value={sortField}
-                    >
-                        <Select.Trigger class="w-[180px]">
-                            {availableSortFields.find(f => f.value === sortField)?.label || "Select field..."}
-                        </Select.Trigger>
-                        <Select.Content>
-                            {#each availableSortFields as field}
-                                <Select.Item
-                                    value={field.value}
-                                    label={field.label}
-                                >
-                                    {field.label}
-                                </Select.Item>
-                            {/each}
-                        </Select.Content>
-                    </Select.Root>
-
-                    <!-- Dropdown for sort order -->
-                    <Select.Root
-                        type="single"
-                        name="sort-order"
-                        bind:value={sortOrder}
-                    >
-                        <Select.Trigger class="w-[180px]">
-                            <div class="flex items-center">
-                                {#if sortOrder === "asc"}
-                                    <LucideArrowUp class="mr-2" size={16} />
-                                    Ascending
-                                {:else}
-                                    <LucideArrowDown class="mr-2" size={16} />
-                                    Descending
-                                {/if}
-                            </div>
-                        </Select.Trigger>
-                        <Select.Content>
-                            <Select.Item value="asc">
-                                <div class="flex items-center">
-                                    <LucideArrowUp class="mr-2" size={16} />
-                                    Ascending
-                                </div>
+                <span class="text-sm">Order:</span>
+                <Select.Root
+                    type="single"
+                    name="sort-order"
+                    bind:value={sortOrder}
+                >
+                    <Select.Trigger class="w-[180px]">
+                        {sortOrder === "asc" ? "Ascending" : "Descending"}
+                    </Select.Trigger>
+                    <Select.Content>
+                        {#each sortDirections as direction}
+                            <Select.Item
+                                value={direction.value}
+                                label={direction.label}
+                            >
+                                {direction.label}
                             </Select.Item>
-                            <Select.Item value="desc">
-                                <div class="flex items-center">
-                                    <LucideArrowDown class="mr-2" size={16} />
-                                    Descending
-                                </div>
-                            </Select.Item>
-                        </Select.Content>
-                    </Select.Root>
-                </div>
+                        {/each}
+                    </Select.Content>
+                </Select.Root>
             </div>
 
             <Separator class="my-4" />

@@ -33,7 +33,7 @@
     // Apply filters (expose values)
     const applyFilter = () => {
         appliedFilters = Array.from(filters);
-        updateFilters({ filters: appliedFilters, filterType });
+        updateFilters({ filters: appliedFilters, type: filterType });
     };
 
 </script>
