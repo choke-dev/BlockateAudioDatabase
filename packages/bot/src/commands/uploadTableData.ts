@@ -55,7 +55,7 @@ export class UserCommand extends Command {
 						category: row.category,
 						whitelisterName: interaction.user.username,
 						whitelisterUserId: BigInt(interaction.user.id),
-						whitelisterType: "roblox"
+						whitelisterType: "discord"
 					}
 				});
 				results.success++;
