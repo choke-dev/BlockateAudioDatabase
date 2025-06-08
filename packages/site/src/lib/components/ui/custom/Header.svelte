@@ -38,18 +38,6 @@
     <div class="flex items-center">
       <div class="hidden md:flex items-center gap-x-3">
         <SocialLinks class="mr-2" />
-
-        <div class="border-l h-8"></div>
-
-        {#await getUserSession()}
-          <!--  -->
-        {:then userSession}
-          {#if userSession.success}
-            <UserActions data={userSession.data} />
-          {:else}
-            <LoginWithProvider />
-          {/if}
-        {/await}
       </div>
 
       <Sheet.Root>
@@ -59,16 +47,6 @@
 
           <div class="flex flex-col gap-y-2 items-center">
             <SocialLinks />
-            <Separator class="my-2" />
-            {#await getUserSession()}
-              <!--  -->
-            {:then userSession}
-              {#if userSession.success}
-                <UserActions data={userSession.data} />
-              {:else}
-                <LoginWithProvider />
-              {/if}
-            {/await}
           </div>
 
         </Sheet.Content>
