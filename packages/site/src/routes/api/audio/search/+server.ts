@@ -97,7 +97,9 @@ export const POST: RequestHandler = async (event) => {
         }
 
         // Construct the where clause
-        const whereClause: any = {};
+        const whereClause: any = {
+            private: false
+        };
         
         // Add name search if query exists
         if (query) {
@@ -118,8 +120,6 @@ export const POST: RequestHandler = async (event) => {
             take: MAX_SEARCH_RESULTS_PER_PAGE,
             ...sortOption
         });
-
-        
 
         // Fetch total count of audios that match the query
         const total = await prisma.audio.count({
