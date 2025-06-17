@@ -47,6 +47,12 @@
 				keyword = '';
 			}
 		}
+		
+		// Reset page to 1 if keyword has changed
+		if (keyword.toLowerCase() !== lastSearchKeyword.toLowerCase()) {
+			currentPage = 1;
+		}
+		
 		let query: URLSearchParams | undefined = new URLSearchParams(page.url.searchParams.toString());
 		if (keyword.length <= 0) {
 			query.delete('keyword');
