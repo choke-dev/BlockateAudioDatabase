@@ -183,6 +183,17 @@ export const POST: RequestHandler = async (event) => {
             total = countResult;
         }
 
+        // Check if the requested page is within bounds
+        const maxPage = Math.ceil(total / MAX_SEARCH_RESULTS_PER_PAGE);
+        if (currentPage > maxPage && total > 0) {
+            return new Response(
+                JSON.stringify({
+                    errors: [{ message: `Page ${currentPage} is out of bounds. Max available page is ${maxPage}.` }]
+                }),
+                { status: 400 }
+            );
+        }
+
         // Return the results and total count
         return new Response(
             JSON.stringify({ items: audios, total }, (key, value) => (typeof value === 'bigint' ? value.toString() : value)),
