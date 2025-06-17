@@ -1,1 +1,3 @@
 export const MAX_SEARCH_RESULTS_PER_PAGE = 25;
+
+export const FUZZY_SEARCH_THRESHOLD = 0.3;

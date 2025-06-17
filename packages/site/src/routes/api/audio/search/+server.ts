@@ -1,9 +1,10 @@
-import { MAX_SEARCH_RESULTS_PER_PAGE } from "$lib/config/search";
+import { MAX_SEARCH_RESULTS_PER_PAGE, FUZZY_SEARCH_THRESHOLD } from "$lib/config/search";
 import { RetryAfterRateLimiter } from 'sveltekit-rate-limiter/server';
 import { prisma } from "$lib/server/db";
 import { SearchFilterSchema, SearchRequestSchema } from "$lib/zodSchemas";
 import type { RequestHandler } from "./$types";
 import { RATELIMIT_SECRET } from "$env/static/private";
+import { Prisma } from "@prisma/client";
 
 export const _limiter = new RetryAfterRateLimiter({
     IP: [5, 's'],
@@ -36,14 +37,6 @@ export const POST: RequestHandler = async (event) => {
 
         const query = event.url.searchParams.get('keyword');
         
-        // Check for empty 'keyword' parameter
-        // if (query && query.length === 0) {
-        //     return new Response(
-        //         JSON.stringify({ errors: [{ message: 'Query parameter "keyword" is empty' }] }),
-        //         { status: 400 }
-        //     );
-        // }
-
         // Fetch paginated audios from the database
         const pageParam = event.url.searchParams.get('page');
         const currentPage = pageParam ? Number(pageParam) : 1;
@@ -114,17 +107,81 @@ export const POST: RequestHandler = async (event) => {
             whereClause[filterType] = filterConditions;
         }
         
-        const audios = await prisma.audio.findMany({
-            where: whereClause,
-            skip: (currentPage - 1) * MAX_SEARCH_RESULTS_PER_PAGE,
-            take: MAX_SEARCH_RESULTS_PER_PAGE,
-            ...sortOption
-        });
-
-        // Fetch total count of audios that match the query
-        const total = await prisma.audio.count({
-            where: whereClause,
-        });
+        let audios;
+        let total;
+        
+        // Check if query exists and use either SIMILARITY or standard search
+        if (query) {
+            try {
+                // Promisify the search and count operations to run concurrently
+                const [searchResults, countResults] = await Promise.all([
+                    // Query for audio results
+                    prisma.$queryRaw<any[]>`
+                        SELECT * FROM "Audio"
+                        WHERE private = false
+                        AND (
+                            name ILIKE ${`%${query}%`} OR
+                            SIMILARITY(name, ${query}::text) > ${FUZZY_SEARCH_THRESHOLD}
+                        )
+                        ORDER BY SIMILARITY(name, ${query}::text) DESC
+                        LIMIT ${MAX_SEARCH_RESULTS_PER_PAGE}
+                        OFFSET ${(currentPage - 1) * MAX_SEARCH_RESULTS_PER_PAGE}
+                    `,
+                    
+                    // Query for total count
+                    prisma.$queryRaw<{ count: BigInt }[]>`
+                        SELECT COUNT(*) as count FROM "Audio"
+                        WHERE private = false
+                        AND (
+                            name ILIKE ${`%${query}%`} OR
+                            SIMILARITY(name, ${query}::text) > ${FUZZY_SEARCH_THRESHOLD}
+                        )
+                    `
+                ]);
+                
+                audios = searchResults;
+                total = Number(countResults[0].count);
+            } catch (error) {
+                // If SIMILARITY fails, fall back to standard ILIKE search
+                console.warn("SIMILARITY search failed, falling back to ILIKE:", error);
+                
+                // Promisify the standard search and count operations
+                const [searchResults, countResult] = await Promise.all([
+                    // Standard Prisma query for results
+                    prisma.audio.findMany({
+                        where: whereClause,
+                        skip: (currentPage - 1) * MAX_SEARCH_RESULTS_PER_PAGE,
+                        take: MAX_SEARCH_RESULTS_PER_PAGE,
+                        ...sortOption
+                    }),
+                    
+                    // Standard Prisma query for count
+                    prisma.audio.count({
+                        where: whereClause,
+                    })
+                ]);
+                
+                audios = searchResults;
+                total = countResult;
+            }
+        } else {
+            // If no query, use standard Prisma query with Promise.all
+            const [searchResults, countResult] = await Promise.all([
+                prisma.audio.findMany({
+                    where: whereClause,
+                    skip: (currentPage - 1) * MAX_SEARCH_RESULTS_PER_PAGE,
+                    take: MAX_SEARCH_RESULTS_PER_PAGE,
+                    ...sortOption
+                }),
+                
+                prisma.audio.count({
+                    where: whereClause,
+                })
+            ]);
+            
+            audios = searchResults;
+            total = countResult;
+        }
 
         // Return the results and total count
         return new Response(
