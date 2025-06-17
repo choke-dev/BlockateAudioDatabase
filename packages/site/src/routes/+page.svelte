@@ -50,11 +50,18 @@
 		let query: URLSearchParams | undefined = new URLSearchParams(page.url.searchParams.toString());
 		if (keyword.length <= 0) {
 			query.delete('keyword');
-			goto(`?${query.toString()}`);
 		} else {
 			query.set('keyword', keyword);
-			goto(`?${query.toString()}`);
 		}
+		
+		// Set page parameter only if not on page 1
+		if (currentPage !== 1) {
+			query.set('page', currentPage.toString());
+		} else {
+			query.delete('page');
+		}
+		
+		goto(`?${query.toString()}`);
 		query = undefined;
 
 		lastSearchKeyword = keyword;
@@ -104,6 +111,13 @@
 		if (keywordParam !== null && keywordParam.length > 0) {
 			keyword = keywordParam;
 		}
+		
+		// Check for page parameter in URL
+		const pageParam = url.searchParams.get('page');
+		if (pageParam !== null && !isNaN(parseInt(pageParam))) {
+			currentPage = parseInt(pageParam);
+		}
+		
 		handleSearch();
 	});
 </script>
@@ -207,7 +221,7 @@
 		{/if}
 
 		<!-- Pagination Component -->
-		<Pagination.Root class="mt-8" count={totalItems} perPage={MAX_SEARCH_RESULTS_PER_PAGE}>
+		<Pagination.Root class="mt-8" count={totalItems} perPage={MAX_SEARCH_RESULTS_PER_PAGE} bind:page={currentPage}>
 			{#snippet children({ pages, currentPage })}
 				<Pagination.Content>
 					<Pagination.Item>
