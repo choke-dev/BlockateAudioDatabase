@@ -5,6 +5,7 @@ import { SearchFilterSchema, SearchRequestSchema } from "$lib/zodSchemas";
 import type { RequestHandler } from "./$types";
 import { RATELIMIT_SECRET } from "$env/static/private";
 import { Prisma } from "@prisma/client";
+import { PrismaClientInitializationError } from "@prisma/client/runtime/library";
 
 export const _limiter = new RetryAfterRateLimiter({
     IP: [5, 's'],
@@ -202,6 +203,13 @@ export const POST: RequestHandler = async (event) => {
     } catch (error) {
         // Handle any unexpected errors
         console.error("Server Error:", error);
+
+        if (error instanceof PrismaClientInitializationError) {
+            return new Response(
+                JSON.stringify({ errors: [{ message: 'Could not contact audio database, please try again later.' }] }),
+                { status: 500 }
+            );
+        }
 
         return new Response(
             JSON.stringify({ errors: [{ message: 'An unexpected error occurred' }] }),

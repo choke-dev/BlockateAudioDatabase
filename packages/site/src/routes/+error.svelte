@@ -38,7 +38,7 @@
         </div>
         <h1 class="text-4xl font-bold mb-2">{isValidHttpStatus(page.status) ? httpStatusMessages[page.status].title : "Unknown Error"}</h1>
         <p class="text-lg text-zinc-400">
-            {isValidHttpStatus(page.status) ? httpStatusMessages[page.status].message : page.error?.message || "An unexpected error occurred."}
+            {isValidHttpStatus(page.status) ? httpStatusMessages[page.status].message : page.error?.message || "An unexpected error occurred"}
         </p>
     </div>
 </main>
