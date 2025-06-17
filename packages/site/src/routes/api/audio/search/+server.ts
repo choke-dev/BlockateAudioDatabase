@@ -1,21 +1,12 @@
-import { MAX_SEARCH_RESULTS_PER_PAGE, FUZZY_SEARCH_THRESHOLD } from "$lib/config/search";
-import { RetryAfterRateLimiter } from 'sveltekit-rate-limiter/server';
+import { FUZZY_SEARCH_THRESHOLD, MAX_SEARCH_RESULTS_PER_PAGE } from "$lib/config/search";
 import { prisma } from "$lib/server/db";
-import { SearchFilterSchema, SearchRequestSchema } from "$lib/zodSchemas";
-import type { RequestHandler } from "./$types";
-import { RATELIMIT_SECRET } from "$env/static/private";
-import { Prisma } from "@prisma/client";
+import { SearchRequestSchema } from "$lib/zodSchemas";
 import { PrismaClientInitializationError } from "@prisma/client/runtime/library";
+import { RetryAfterRateLimiter } from 'sveltekit-rate-limiter/server';
+import type { RequestHandler } from "./$types";
 
 export const _limiter = new RetryAfterRateLimiter({
-    IP: [5, 's'],
-    // IPUA: [3, 's'],
-    // cookie: {
-    //   name: 'limiterId',
-    //   secret: RATELIMIT_SECRET,
-    //   rate: [5, 's'],
-    //   preflight: true,
-    // }
+    IP: [5, 's']
 });
 
 export const POST: RequestHandler = async (event) => {
