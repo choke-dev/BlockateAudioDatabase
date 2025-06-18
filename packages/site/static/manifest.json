@@ -12,13 +12,13 @@
     "orientation": "any",
     "icons": [
         {
-            "src": "https://blockateaudiodb.choke.dev/BlockateAudioDatabaseLogo.png",
+            "src": "https://blockateaudiodb.choke.dev/audiodb.png",
             "sizes": "768x768",
             "type": "image/png",
             "purpose": "maskable"
         },
         {
-            "src": "https://blockateaudiodb.choke.dev/BlockateAudioDatabaseLogo.png",
+            "src": "https://blockateaudiodb.choke.dev/audiodb.png",
             "sizes": "192x192",
             "type": "image/png",
             "purpose": "any"

@@ -18,9 +18,9 @@
     <div class="flex-shrink-0">
       <a href="/">
         <img
-        src="/BlockateAudioDatabaseLogo.png"
+        src="/audiodb.png"
         alt="Blockate Audio Database Logo"
-        class="hidden md:block w-55 h-8"
+        class="hidden md:block size-10"
       />
       </a>
     </div>
@@ -28,9 +28,9 @@
     <div class="absolute items-center left-1/2 transform -translate-x-1/2">
       <a href="/">
         <img
-        src="/BlockateAudioDatabaseLogo.png"
+        src="/audiodb.png"
         alt="Blockate Audio Database Logo"
-        class="block md:hidden w-8 h-8"
+        class="block md:hidden size-10"
         />
       </a>
     </div>

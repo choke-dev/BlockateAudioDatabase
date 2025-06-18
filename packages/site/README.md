@@ -1,6 +1,6 @@
 <h1 align="center">
     <sub>
-        <img src="static/BlockateAudioDatabaseLogo.png" height="38" width="38">
+        <img src="static/audiodb.png" height="38" width="38">
     </sub>
     Blockate Audio Database
 </h1>
