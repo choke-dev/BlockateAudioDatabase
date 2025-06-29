@@ -10,6 +10,7 @@
         { label: "ID", value: "id" },
         { label: "Name", value: "name" },
         { label: "Category", value: "category" },
+        { label: "Date Added", value: "created_at" },
     ];
 
     const sortDirections = [
