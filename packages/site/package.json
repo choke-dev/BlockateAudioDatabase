@@ -38,7 +38,7 @@
 		"prettier-plugin-svelte": "^3.2.6",
 		"prettier-plugin-tailwindcss": "^0.6.5",
 		"prisma": "^6.9.0",
-		"svelte": "^5.0.0",
+		"svelte": "^5.34.9",
 		"svelte-check": "^4.0.0",
 		"sveltekit-flash-message": "^2.4.5",
 		"sveltekit-rate-limiter": "^0.6.1",
