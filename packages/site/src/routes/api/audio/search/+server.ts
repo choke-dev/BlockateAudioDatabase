@@ -10,6 +10,8 @@ export const _limiter = new RetryAfterRateLimiter({
     IP: [5, 's']
 });
 
+const validSortFields = ['id', 'name', 'category', 'created_at'];
+
 export const POST: RequestHandler = async (event) => {
     const status = await _limiter.check(event);
     if (status.limited) {
@@ -74,6 +76,15 @@ export const POST: RequestHandler = async (event) => {
             // Handle sort
             if (requestBody.data!.sort) {
                 const { field, order } = requestBody.data!.sort;
+                
+                // Validate sort field
+                if (!validSortFields.includes(field)) {
+                    return new Response(
+                        JSON.stringify({ errors: [{ message: `Invalid sort field: "${field}". Valid fields are: ${validSortFields.join(', ')}` }] }),
+                        { status: 400 }
+                    );
+                }
+                
                 sortOption = {
                     orderBy: {
                         [field]: order
