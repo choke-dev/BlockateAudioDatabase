@@ -1,21 +1,16 @@
 <script lang="ts">
-  import UserActions from "$lib/components/ui/custom/UserActions.svelte";
-  import { Separator } from "$lib/components/ui/separator/index";
   import * as Sheet from "$lib/components/ui/sheet/index.js";
-// Icons
-  import LucideMenu from '~icons/lucide/menu';
-  import LoginWithProvider from "./LoginWithProvider.svelte";
   import SocialLinks from "./SocialLinks.svelte";
+  
+  // Icons
+  import LucideMenu from '~icons/lucide/menu';
 
-  const getUserSession = async (): Promise<{ success: boolean; data: any }> => {
-    return await fetch("/api/session", { credentials: "same-origin" }).then((response) => response.json()).catch(() => ({ success: false, data: null }));
-  }
-</script>
+  </script>
 
 <header class="border-border/40 bg-background/95 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 w-full border-y backdrop-blur">
   <div class="container flex h-14 max-w-screen-2xl items-center justify-between">
     
-    <div class="flex-shrink-0">
+    <div class="flex-shrink-0 flex">
       <a href="/">
         <img
         src="/audiodb.png"
