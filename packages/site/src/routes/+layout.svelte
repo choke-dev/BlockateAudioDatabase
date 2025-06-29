@@ -8,18 +8,20 @@
 
 	import Header from '$lib/components/ui/custom/Header.svelte';
 	import "../app.css";
-	let { children } = $props();
+	let { children, data } = $props();
 
 	const flash = getFlash(page, {
 		clearAfterMs: 10900
 	});
+
+	const slicedDeploymentCommitSHA = data.deploymentCommitSHA ? data.deploymentCommitSHA.slice(0, 7) : '';
 </script>
 
 <header class="flex flex-col min-h-screen z-50">
 
-	<!-- <div class="absolute bottom-4 right-4 text-white text-opacity-25 text-xs z-[60]">
-		Commit: {"AAAAAAAAAAA".slice(0, 7)}
-	</div> -->
+	<div class="fixed bottom-0 right-0 text-white text-opacity-25 text-xs z-[60]">
+		{slicedDeploymentCommitSHA}
+	</div>
 
 	{#if $flash}
 		<div class={`z-[99] animate-fadeInOut absolute top-[5rem] right-8 rounded-lg ${$flash.type === "success" ? "bg-[#02311b]" : "bg-[#3b0703]"}`}>
