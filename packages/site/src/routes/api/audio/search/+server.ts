@@ -3,6 +3,7 @@ import { prisma } from "$lib/server/db";
 import { SearchRequestSchema } from "$lib/zodSchemas";
 import { PrismaClientInitializationError } from "@prisma/client/runtime/library";
 import { RetryAfterRateLimiter } from 'sveltekit-rate-limiter/server';
+import { Prisma } from "@prisma/client";
 import type { RequestHandler } from "./$types";
 
 export const _limiter = new RetryAfterRateLimiter({
@@ -105,6 +106,22 @@ export const POST: RequestHandler = async (event) => {
         // Check if query exists and use either SIMILARITY or standard search
         if (query) {
             try {
+                // Build filter SQL fragment
+                let filterSql = Prisma.empty;
+                
+                if (filterConditions.length > 0) {
+                    const filterClauses: string[] = [];
+                    
+                    filterConditions.forEach(condition => {
+                        const field = Object.keys(condition)[0];
+                        const value = condition[field].contains;
+                        filterClauses.push(`${field} ILIKE '%${value}%'`);
+                    });
+                    
+                    const filterClausesSql = filterClauses.join(filterType === 'AND' ? ' AND ' : ' OR ');
+                    filterSql = Prisma.sql` AND (${Prisma.raw(filterClausesSql)})`;
+                }
+                
                 // Promisify the search and count operations to run concurrently
                 const [searchResults, countResults] = await Promise.all([
                     // Query for audio results
@@ -113,9 +130,10 @@ export const POST: RequestHandler = async (event) => {
                         WHERE private = false
                         AND (
                             name ILIKE ${`%${query}%`} OR
-                            SIMILARITY(name, ${query}::text) > ${FUZZY_SEARCH_THRESHOLD}
+                            SIMILARITY(name, ${query}) > ${FUZZY_SEARCH_THRESHOLD}
                         )
-                        ORDER BY SIMILARITY(name, ${query}::text) DESC
+                        ${filterSql}
+                        ORDER BY SIMILARITY(name, ${query}) DESC
                         LIMIT ${MAX_SEARCH_RESULTS_PER_PAGE}
                         OFFSET ${(currentPage - 1) * MAX_SEARCH_RESULTS_PER_PAGE}
                     `,
@@ -126,8 +144,9 @@ export const POST: RequestHandler = async (event) => {
                         WHERE private = false
                         AND (
                             name ILIKE ${`%${query}%`} OR
-                            SIMILARITY(name, ${query}::text) > ${FUZZY_SEARCH_THRESHOLD}
+                            SIMILARITY(name, ${query}) > ${FUZZY_SEARCH_THRESHOLD}
                         )
+                        ${filterSql}
                     `
                 ]);
                 
