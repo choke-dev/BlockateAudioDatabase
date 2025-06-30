@@ -16,7 +16,7 @@
 	});
 </script>
 
-<header class="z-50 flex min-h-screen flex-col">
+<header class="flex min-h-screen flex-col">
 	<div class="fixed bottom-2 left-3 z-[60] text-xs text-white text-opacity-25">
 		<Dialog.Root>
 			<Dialog.Trigger> <LucideInfo class="size-6" /> </Dialog.Trigger>
