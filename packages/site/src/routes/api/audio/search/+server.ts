@@ -230,7 +230,8 @@ export const POST: RequestHandler = async (event) => {
         // Handle any unexpected errors
         console.error("Server Error:", error);
 
-        if (error instanceof PrismaClientInitializationError) {
+        if (error instanceof Error) {
+            
             return new Response(
                 JSON.stringify({ errors: [{ message: 'Could not contact audio database, please try again later.' }] }),
                 { status: 500 }
