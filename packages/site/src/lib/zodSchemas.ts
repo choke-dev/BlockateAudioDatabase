@@ -9,6 +9,8 @@ export const AudioSchema = z.object({
     whitelisterType: z.string(),
 })
 
+export const AudioPreviewAPISchema = z.array(z.string());
+
 export const BatchPatchAudioSchema = z.record(
     z.string(),
     AudioSchema.partial()

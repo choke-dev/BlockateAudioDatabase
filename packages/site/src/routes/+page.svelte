@@ -8,19 +8,31 @@
 	import LucideLoaderCircle from '~icons/lucide/loader-circle';
 	import LucideSearch from '~icons/lucide/search';
 	import LucideX from '~icons/lucide/x';
+	import MaterialSymbolsPlayArrowRounded from '~icons/material-symbols/play-arrow-rounded';
+	import MaterialSymbolsPauseRounded from '~icons/material-symbols/pause-rounded';
 
 	import SearchFilter from '$lib/components/ui/custom/SearchFilter.svelte';
 	import SearchSort from '$lib/components/ui/custom/SearchSort.svelte'; 
 	import { MAX_SEARCH_RESULTS_PER_PAGE } from '$lib/config/search';
 	import type { Audio } from '@prisma/client';
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { buildWhitelisterUrl } from '$lib/whitelister';
+	import { browser } from '$app/environment';
 
 	let errors = $state<{ message: string }[]>([]);
 	let searchResults: Audio[] = $state([]);
 	let loading = $state(false);
+	let currentlyPlayingId = $state<string | null>(null);
+	let loadingAudioId = $state<string | null>(null);
+	let audioElement: HTMLAudioElement;
+	let prefetchedAudioUrls = $state<Record<string, string>>({});
+	let prefetchingAudio = $state(false);
+	
+	// Cache configuration
+	const AUDIO_CACHE_KEY = 'blockate-audio-urls-cache';
+	const CACHE_EXPIRY_TIME = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
 	let started = $state(false);
 	let lastSearchKeyword = $state('');
@@ -37,7 +49,9 @@
 		loading = true;
         errors = []
 		searchResults = [];
-		
+		audioElement.pause();
+		currentlyPlayingId = null;
+
 		if (event && event.target instanceof HTMLFormElement) {
 			const formData = new FormData(event.target);
 			const formKeyword = formData.get('keyword');
@@ -88,6 +102,9 @@
 		searchResults = data.items; // Assuming the response includes a `items` field with the audios
 		totalItems = data.total; // Assuming the response includes a `total` field with the total number of audios
 		loading = false;
+		
+		// Prefetch audio URLs after search results are loaded
+		// prefetchAudioUrls();
 	}
 
 	async function handlePageChange(page: number, event?: Event) {
@@ -111,7 +128,177 @@
 		await handleSearch();
 	}
 
+	// Helper function to save audio URLs to localStorage
+	function saveToCache(audioUrls: Record<string, string>) {
+		if (!browser) return;
+		
+		try {
+			const cacheData = {
+				urls: audioUrls,
+				timestamp: Date.now()
+			};
+			localStorage.setItem(AUDIO_CACHE_KEY, JSON.stringify(cacheData));
+		} catch (error) {
+			console.error('Error saving audio URLs to cache:', error);
+		}
+	}
+	
+	// Helper function to load audio URLs from localStorage
+	function loadFromCache(): Record<string, string> {
+		if (!browser) return {};
+		
+		try {
+			const cachedData = localStorage.getItem(AUDIO_CACHE_KEY);
+			if (!cachedData) return {};
+			
+			const parsedData = JSON.parse(cachedData);
+			
+			// Check if cache has expired
+			if (Date.now() - parsedData.timestamp > CACHE_EXPIRY_TIME) {
+				localStorage.removeItem(AUDIO_CACHE_KEY);
+				return {};
+			}
+			
+			return parsedData.urls || {};
+		} catch (error) {
+			console.error('Error loading audio URLs from cache:', error);
+			return {};
+		}
+	}
+	
+	// Function to prefetch all audio URLs for the current search results
+	async function prefetchAudioUrls() {
+		if (searchResults.length === 0) return;
+		
+		try {
+			prefetchingAudio = true;
+			
+			// Get all audio IDs from search results
+			const audioIds = searchResults.map(audio => audio.id);
+			
+			// Check which audio IDs are already cached
+			const cachedUrls = loadFromCache();
+			prefetchedAudioUrls = cachedUrls;
+			
+			// Filter out audio IDs that are already cached and not expired
+			const uncachedAudioIds = audioIds.filter(id => !cachedUrls[id]);
+			
+			if (uncachedAudioIds.length === 0) {
+				// All audio URLs are already cached
+				prefetchingAudio = false;
+				return;
+			}
+			
+			// Fetch only uncached audio URLs
+			const response = await fetch('/api/audio/preview', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify(uncachedAudioIds)
+			});
+			
+			if (!response.ok) {
+				console.error('Failed to prefetch audio URLs');
+				prefetchingAudio = false;
+				return;
+			}
+			
+			// Store the newly fetched URLs
+			const newAudioUrls = await response.json();
+			
+			// Merge with existing cached URLs
+			const mergedUrls = { ...cachedUrls, ...newAudioUrls };
+			prefetchedAudioUrls = mergedUrls;
+			
+			// Update the cache
+			saveToCache(mergedUrls);
+		} catch (error) {
+			console.error('Error prefetching audio URLs:', error);
+		} finally {
+			prefetchingAudio = false;
+		}
+	}
+
+	async function playAudio(audioId: string) {
+		if (currentlyPlayingId === audioId) {
+			// If the same audio is already playing, pause it
+			audioElement.pause();
+			currentlyPlayingId = null;
+			return;
+		}
+
+		try {
+			// Show loading state for this specific audio ID
+			loadingAudioId = audioId;
+			
+			// Check cache first
+			const cachedUrls = loadFromCache();
+			
+			// Use prefetched URL if available, otherwise fetch it
+			let audioUrl = prefetchedAudioUrls[audioId] || cachedUrls[audioId] || searchResults[Number(audioId)]?.audioUrl;
+			
+			if (!audioUrl) {
+				// Fetch the audio URL from the API if not cached
+				const response = await fetch('/api/audio/preview', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json'
+					},
+					body: JSON.stringify([audioId])
+				});
+				
+				if (!response.ok) {
+					const errorData = await response.json();
+					errors = errorData.errors || [{ message: 'Failed to load audio' }];
+					loadingAudioId = null;
+					currentlyPlayingId = null;
+					return;
+				}
+				
+				const audioUrls = await response.json();
+				audioUrl = audioUrls[audioId];
+				
+				if (audioUrl) {
+					// Update cache with the new URL
+					const updatedCache = { ...cachedUrls, [audioId]: audioUrl };
+					prefetchedAudioUrls = updatedCache;
+					saveToCache(updatedCache);
+				}
+			}
+			
+			if (!audioUrl) {
+				errors = [{ message: 'Audio URL not found' }];
+				loadingAudioId = null;
+				currentlyPlayingId = null;
+				return;
+			}
+			
+			// Set the audio source and play
+			audioElement.src = audioUrl;
+			audioElement.play();
+			loadingAudioId = null;
+			currentlyPlayingId = audioId;
+			
+			// When audio ends, reset the playing state
+			audioElement.onended = () => {
+				currentlyPlayingId = null;
+			};
+		} catch (error) {
+			console.error('Error playing audio:', error);
+			errors = [{ message: 'An error occurred while playing audio' }];
+			loadingAudioId = null;
+			currentlyPlayingId = null;
+		}
+	}
+
+	// Load cached audio URLs on component mount
 	onMount(async () => {
+		// Load cached URLs
+		if (browser) {
+			const cachedUrls = loadFromCache();
+			prefetchedAudioUrls = cachedUrls;
+		}
 		const url = new URL(location.href);
 		const keywordParam = url.searchParams.get('keyword');
 		if (keywordParam !== null && keywordParam.length > 0) {
@@ -190,14 +377,22 @@
 <div class="mb-32 mx-auto max-w-[75%] flex flex-col items-center justify-center relative">
 	<div class="w-full absolute -top-0 left-0">
     {#if started && !loading}
-        <p class="text-zinc-500">Fetched {searchResults.length} audio{Math.abs(searchResults.length) === 1 ? '' : 's'}</p>
+        <p class="text-zinc-500">
+   Fetched {searchResults.length} audio{Math.abs(searchResults.length) === 1 ? '' : 's'}
+   {#if prefetchingAudio}
+    <span class="ml-2 inline-flex items-center text-xs">
+    	<LucideLoaderCircle class="mr-1 h-3 w-3 animate-spin" />
+    	Prefetching audio...
+    </span>
+   {/if}
+  </p>
     {/if}
 	</div>
 	<div class="w-full mt-6">
 		<Table.Root class="rounded-lg border backdrop-blur-sm">
 			<Table.Header class="rounded-lg">
 				<Table.Row>
-					<Table.Head class="w-[150px]">Audio ID</Table.Head>
+					<Table.Head class="w-[200px]">Audio ID</Table.Head>
 					<Table.Head>Name</Table.Head>
 					<Table.Head>Category</Table.Head>
 					<Table.Head class="text-right">Whitelister</Table.Head>
@@ -206,7 +401,26 @@
 			<Table.Body>
 				{#each searchResults as audio}
 					<Table.Row>
-						<Table.Head class="w-[150px]">{audio.id}</Table.Head>
+						<Table.Head class="w-[200px]">
+							<div class="flex items-center gap-2">
+								{#if audio.version === 2}
+								<button
+									class={`flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 hover:bg-primary/20 transition-colors ${currentlyPlayingId === audio.id ? 'bg-white text-black hover:bg-white/80' : ''}`}
+									onclick={() => playAudio(audio.id)}
+									aria-label={currentlyPlayingId === audio.id ? "Pause audio" : "Play audio"}
+								>
+									{#if loadingAudioId === audio.id}
+										<LucideLoaderCircle class="h-4 w-4 animate-spin" />
+									{:else if currentlyPlayingId === audio.id}
+										<MaterialSymbolsPauseRounded class="size-6" />
+									{:else}
+										<MaterialSymbolsPlayArrowRounded class="size-6" />
+									{/if}
+								</button>
+								{/if}
+								{audio.id}
+							</div>
+						</Table.Head>
 						<Table.Head>{audio.name}</Table.Head>
 						<Table.Head>{audio.category}</Table.Head>
 						<Table.Head class="text-right">
@@ -260,4 +474,7 @@
 		</Pagination.Root>
 	</div>
 </div>
+
+<!-- Hidden audio element for playback -->
+<audio bind:this={audioElement} class="hidden"></audio>
 
