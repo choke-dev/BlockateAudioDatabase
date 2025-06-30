@@ -80,7 +80,7 @@ export const POST = async (event) => {
     // Check which audios exist in JukeHost
     for (const audio of audios) {
         if (!jukeHostMap.has(audio.id)) {
-            audioIdsToFetch.push(audio.id);
+            audioIdsToFetch.push(Number(audio.id));
         }
     }
 
@@ -159,7 +159,7 @@ export const POST = async (event) => {
                             // Update the database with the JukeHost URL
                             try {
                                 await prisma.audio.update({
-                                    where: { id: audioId },
+                                    where: { id: String(audioId) },
                                     data: { audioUrl }
                                 });
                                 console.log(`Updated audio ${audioId} in database with URL: ${audioUrl}`);
