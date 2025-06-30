@@ -30,13 +30,13 @@ export const GET = async ({ url }) => {
     });
 
     // Reconstruct the response array preserving the original order and duplicates
-    const audios = audioIds
-        .map(id => audioMap.get(id))
-        .filter(audio => audio !== undefined);
+    // Set non-existent entries as null instead of filtering them out
+    const audios = audioIds.map(id => audioMap.get(id) || null);
 
-    const missingIds = audioIds.filter(id => !audiosFromDb.some(audio => audio.id === id));
-
-    if (audios.length === 0) {
+    // Check if all entries are null (all IDs were not found)
+    const allNull = audios.every(audio => audio === null);
+    
+    if (allNull) {
         return new Response(JSON.stringify({ errors: [{ message: 'Audio not found' }] }), { status: 404 })
     }
 
