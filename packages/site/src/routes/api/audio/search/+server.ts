@@ -17,7 +17,12 @@ export const POST: RequestHandler = async (event) => {
     if (status.limited) {
         return new Response(JSON.stringify({ 
             errors: [ { message: `You are being rate limited. Please try again after ${status.retryAfter} second${Math.abs(status.retryAfter) === 1 ? '' : 's'}.` } ] }),
-            { status: 429 }
+            { 
+                status: 429,
+                headers: {
+                    "Retry-After": String(status.retryAfter)
+                }
+            }
         )
     }
 
