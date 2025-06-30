@@ -10,6 +10,7 @@
 	import LucideX from '~icons/lucide/x';
 	import MaterialSymbolsPlayArrowRounded from '~icons/material-symbols/play-arrow-rounded';
 	import MaterialSymbolsPauseRounded from '~icons/material-symbols/pause-rounded';
+	import LucideArrowRight from '~icons/lucide/arrow-right';
 
 	import SearchFilter from '$lib/components/ui/custom/SearchFilter.svelte';
 	import SearchSort from '$lib/components/ui/custom/SearchSort.svelte'; 
@@ -472,6 +473,37 @@
 				</Pagination.Content>
 			{/snippet}
 		</Pagination.Root>
+		
+		<!-- Page selector -->
+		<div class="mt-4 flex items-center justify-center gap-2">
+			<span class="text-sm text-zinc-400">Go to page:</span>
+			<form
+				class="flex items-center gap-2"
+				onsubmit={(e) => {
+					e.preventDefault();
+					const formData = new FormData(e.currentTarget);
+					const pageInput = formData.get('pageInput');
+					const pageNumber = pageInput ? parseInt(pageInput.toString()) : null;
+					if (
+						pageNumber &&
+						!isNaN(pageNumber) &&
+						pageNumber > 0 &&
+						pageNumber <= Math.ceil(totalItems / MAX_SEARCH_RESULTS_PER_PAGE)
+					) {
+						handlePageChange(pageNumber);
+						// Clear page input
+						e.currentTarget.reset();
+					}
+				}}
+			>
+				<Input
+					name="pageInput"
+					class="w-16 text-center"
+					placeholder=""
+				/>
+				<Button type="submit" size="icon"> <LucideArrowRight class="size-8" /> </Button>
+			</form>
+		</div>
 	</div>
 </div>
 
