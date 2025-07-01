@@ -16,39 +16,6 @@
 	const flash = getFlash(page, {
 		clearAfterMs: 10900
 	});
-
-	// Handle version changes using the updated object
-	$effect(() => {
-		// Check if there's a new version
-		if (updated.current) {
-			console.log('New version detected, reloading page...');
-			// Set a flag in sessionStorage to prevent reload loops
-			if (!sessionStorage.getItem('app_updating')) {
-				sessionStorage.setItem('app_updating', 'true');
-				// The service worker handles cache clearing in its 'activate' event
-				// Give the service worker time to activate before reloading
-				setTimeout(() => {
-					invalidateAll();
-					window.location.reload();
-				}, 1000);
-			}
-		}
-	});
-
-	// Force a version check when the component mounts
-	onMount(() => {
-		if (typeof window !== 'undefined') {
-			// Clear the updating flag when the page loads
-			sessionStorage.removeItem('app_updating');
-			
-			// Check for updates immediately
-			updated.check().then(hasUpdate => {
-				if (hasUpdate) {
-					console.log('Update found during initial check');
-				}
-			});
-		}
-	});
 </script>
 
 <header class="flex min-h-screen flex-col">
