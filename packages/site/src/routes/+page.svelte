@@ -26,10 +26,13 @@
 	let searchResults: Audio[] = $state([]);
 	let loading = $state(false);
 	let currentlyPlayingId = $state<string | null>(null);
+	let lastPlayedAudioId = $state<string | null>(null);
 	let loadingAudioId = $state<string | null>(null);
 	let audioElement: HTMLAudioElement;
 	let prefetchedAudioUrls = $state<Record<string, string>>({});
 	let prefetchingAudio = $state(false);
+	let audioBlobs = $state<Record<string, Blob>>({});
+	let audioBlobUrls = $state<Record<string, string>>({});
 	
 	// Cache configuration
 	const AUDIO_CACHE_KEY = 'blockate-audio-urls-cache';
@@ -52,6 +55,7 @@
 		searchResults = [];
 		audioElement.pause();
 		currentlyPlayingId = null;
+		lastPlayedAudioId = null;
 
 		if (event && event.target instanceof HTMLFormElement) {
 			const formData = new FormData(event.target);
@@ -188,11 +192,11 @@
 			const cachedUrls = loadFromCache();
 			prefetchedAudioUrls = cachedUrls;
 			
-			// Filter out audio IDs that are already cached and not expired
-			const uncachedAudioIds = audioIds.filter(id => !cachedUrls[id]);
+			// Filter out audio IDs that are already in blob storage or cached
+			const uncachedAudioIds = audioIds.filter(id => !audioBlobs[id] && !cachedUrls[id]);
 			
 			if (uncachedAudioIds.length === 0) {
-				// All audio URLs are already cached
+				// All audio URLs are already cached or stored as blobs
 				prefetchingAudio = false;
 				return;
 			}
@@ -221,6 +225,35 @@
 			
 			// Update the cache
 			saveToCache(mergedUrls);
+			
+			// Prefetch audio blobs in the background
+			// We're not awaiting this to avoid blocking the UI
+			Promise.all(
+				Object.entries(newAudioUrls).map(async ([id, url]) => {
+					try {
+						// Skip if we already have this blob
+						if (audioBlobs[id]) return;
+						
+						// Fetch the audio as a blob
+						const audioResponse = await fetch(url as string);
+						if (!audioResponse.ok) return;
+						
+						// Get the blob from the response
+						const audioBlob = await audioResponse.blob();
+						
+						// Store the blob for future use
+						audioBlobs = { ...audioBlobs, [id]: audioBlob };
+						
+						// Create and store a blob URL
+						const blobUrl = URL.createObjectURL(audioBlob);
+						audioBlobUrls = { ...audioBlobUrls, [id]: blobUrl };
+					} catch (error) {
+						console.error(`Error prefetching audio blob for ID ${id}:`, error);
+					}
+				})
+			).catch(error => {
+				console.error('Error in blob prefetching:', error);
+			});
 		} catch (error) {
 			console.error('Error prefetching audio URLs:', error);
 		} finally {
@@ -232,7 +265,17 @@
 		if (currentlyPlayingId === audioId) {
 			// If the same audio is already playing, pause it
 			audioElement.pause();
+			audioElement.currentTime = 0;
 			currentlyPlayingId = null;
+			// Keep track of the last played audio
+			lastPlayedAudioId = audioId;
+			return;
+		}
+		
+		// If this is the same audio that was last played and it's paused, just resume
+		if (lastPlayedAudioId === audioId && audioElement.paused && audioElement.src) {
+			audioElement.play();
+			currentlyPlayingId = audioId;
 			return;
 		}
 
@@ -240,7 +283,31 @@
 			// Show loading state for this specific audio ID
 			loadingAudioId = audioId;
 			
-			// Check cache first
+			// Check if we already have the audio blob
+			if (audioBlobs[audioId]) {
+				// Check if we already have a blob URL for this audio
+				let blobUrl = audioBlobUrls[audioId];
+				
+				// If not, create one and store it
+				if (!blobUrl) {
+					blobUrl = URL.createObjectURL(audioBlobs[audioId]);
+					audioBlobUrls = { ...audioBlobUrls, [audioId]: blobUrl };
+				}
+				
+				audioElement.src = blobUrl;
+				audioElement.play();
+				loadingAudioId = null;
+				currentlyPlayingId = audioId;
+				lastPlayedAudioId = audioId;
+				
+				// When audio ends, reset the playing state
+				audioElement.onended = () => {
+					currentlyPlayingId = null;
+				};
+				return;
+			}
+			
+			// Check cache for URL
 			const cachedUrls = loadFromCache();
 			
 			// Use prefetched URL if available, otherwise fetch it
@@ -282,8 +349,25 @@
 				return;
 			}
 			
-			// Set the audio source and play
-			audioElement.src = audioUrl;
+			// Fetch the audio as a blob
+			const audioResponse = await fetch(audioUrl);
+			if (!audioResponse.ok) {
+				errors = [{ message: 'Failed to load audio data' }];
+				loadingAudioId = null;
+				currentlyPlayingId = null;
+				return;
+			}
+			
+			// Get the blob from the response
+			const audioBlob = await audioResponse.blob();
+			
+			// Store the blob for future use
+			audioBlobs = { ...audioBlobs, [audioId]: audioBlob };
+			
+			// Create a URL for the blob and store it
+			const blobUrl = URL.createObjectURL(audioBlob);
+			audioBlobUrls = { ...audioBlobUrls, [audioId]: blobUrl };
+			audioElement.src = blobUrl;
 			audioElement.play();
 			loadingAudioId = null;
 			currentlyPlayingId = audioId;
@@ -320,6 +404,27 @@
 		}
 		
 		handleSearch();
+	});
+	
+	// Clean up blob URLs when component is destroyed
+	onDestroy(() => {
+		// Revoke all blob URLs to prevent memory leaks
+		Object.values(audioBlobUrls).forEach(blobUrl => {
+			if (blobUrl && blobUrl.startsWith('blob:')) {
+				URL.revokeObjectURL(blobUrl);
+			}
+		});
+		
+		// Also revoke the current audio element src if it's a blob
+		if (audioElement && audioElement.src && audioElement.src.startsWith('blob:')) {
+			URL.revokeObjectURL(audioElement.src);
+		}
+		
+		// Clear the audio element
+		if (audioElement) {
+			audioElement.pause();
+			audioElement.src = '';
+		}
 	});
 </script>
 
