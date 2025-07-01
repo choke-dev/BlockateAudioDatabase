@@ -27,7 +27,7 @@ export const POST: RequestHandler = async (event) => {
     }
 
     try {
-        const query = event.url.searchParams.get('keyword');
+        const query = decodeURIComponent(event.url.searchParams.get('keyword') ?? '');
         
         // Fetch paginated audios from the database
         const pageParam = event.url.searchParams.get('page');
@@ -138,10 +138,10 @@ export const POST: RequestHandler = async (event) => {
                         WHERE private = false
                         AND (
                             name ILIKE ${`%${query}%`} OR
-                            SIMILARITY(name, ${query}) > ${FUZZY_SEARCH_THRESHOLD}
+                            extensions.SIMILARITY(name, ${query}) > ${FUZZY_SEARCH_THRESHOLD}
                         )
                         ${filterSql}
-                        ORDER BY SIMILARITY(name, ${query}) DESC
+                        ORDER BY extensions.SIMILARITY(name, ${query}) DESC
                         LIMIT ${MAX_SEARCH_RESULTS_PER_PAGE}
                         OFFSET ${(currentPage - 1) * MAX_SEARCH_RESULTS_PER_PAGE}
                     `,
@@ -152,7 +152,7 @@ export const POST: RequestHandler = async (event) => {
                         WHERE private = false
                         AND (
                             name ILIKE ${`%${query}%`} OR
-                            SIMILARITY(name, ${query}) > ${FUZZY_SEARCH_THRESHOLD}
+                            extensions.SIMILARITY(name, ${query}) > ${FUZZY_SEARCH_THRESHOLD}
                         )
                         ${filterSql}
                     `
