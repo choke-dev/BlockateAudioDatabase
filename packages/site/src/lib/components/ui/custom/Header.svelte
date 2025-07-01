@@ -14,7 +14,7 @@
       <a href="/">
         <img
         src="/audiodb.png"
-        alt="Blockate Audio Database Logo"
+        alt="Blockate Audio Browser Logo"
         class="hidden md:block size-10"
       />
       </a>
@@ -24,7 +24,7 @@
       <a href="/">
         <img
         src="/audiodb.png"
-        alt="Blockate Audio Database Logo"
+        alt="Blockate Audio Browser Logo"
         class="block md:hidden size-10"
         />
       </a>

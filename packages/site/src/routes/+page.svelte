@@ -317,7 +317,7 @@
 </script>
 
 <svelte:head>
-	<title>Blockate Audio Database</title>
+	<title>Blockate Audio Browser</title>
 </svelte:head>
 
 {#if errors.length > 0}

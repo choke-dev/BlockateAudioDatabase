@@ -1,10 +1,10 @@
 {
-    "name": "Blockate Audio Database",
-    "short_name": "Blockate Audio Database",
+    "name": "Blockate Audio Browser",
+    "short_name": "Blockate Audio Browser",
     "start_url": "/",
     "display": "standalone",
     "display_override": ["window-controls-overlay", "fullscreen", "minimal-ui"],
-    "description": "An application to search through and manage whitelisted audio IDs on Blockate",
+    "description": "Search and preview audios available to use in Blockate!",
     "lang": "en",
     "dir": "auto",
     "theme_color": "#09090b",

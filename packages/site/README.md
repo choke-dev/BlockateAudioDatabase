@@ -2,7 +2,7 @@
     <sub>
         <img src="static/audiodb.png" height="38" width="38">
     </sub>
-    Blockate Audio Database
+    Blockate Audio Browser
 </h1>
 
 <p align="center">
