@@ -27,14 +27,6 @@ export const POST: RequestHandler = async (event) => {
     }
 
     try {
-        // Check for missing 'keyword' query parameter
-        if (!event.url.searchParams.has('keyword')) {
-            return new Response(
-                JSON.stringify({ errors: [{ message: 'Missing "keyword" query parameter' }] }),
-                { status: 400 }
-            );
-        }
-
         const query = event.url.searchParams.get('keyword');
         
         // Fetch paginated audios from the database

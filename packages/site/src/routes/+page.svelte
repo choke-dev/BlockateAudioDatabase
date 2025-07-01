@@ -86,7 +86,14 @@
 		query = undefined;
 
 		lastSearchKeyword = keyword;
-		const response = await fetch(`/api/audio/search?keyword=${encodeURIComponent(lastSearchKeyword)}&page=${currentPage}`, {
+
+		const queryParams = new URLSearchParams();
+		if (lastSearchKeyword.length > 0) {
+			queryParams.set('keyword', encodeURIComponent(lastSearchKeyword));
+		}
+		queryParams.set('page', currentPage.toString());
+		
+		const response = await fetch(`/api/audio/search?${queryParams.toString()}`, {
 			method: 'POST',
 			body: JSON.stringify({
 				filters,
