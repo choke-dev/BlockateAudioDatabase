@@ -16,7 +16,7 @@ const config = {
 			runtime: 'nodejs22.x'
 		}),
 		version: {
-			name: child_process.execSync('git rev-parse HEAD').toString().trim(),
+			name: process.env.VERCEL_GIT_COMMIT_SHA ?? "DEV",
 			pollInterval: 60 * 60 * 1000
 		}
 	}
