@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { getFlash } from 'sveltekit-flash-message';
-	import { page } from '$app/state';
+	import { page, updated } from '$app/state';
+	import { onMount } from 'svelte';
+	import { invalidateAll } from '$app/navigation';
 
 	import LucideCircleAlert from '~icons/lucide/circle-alert';
 	import LucideCircleCheck from '~icons/lucide/circle-check';
@@ -13,6 +15,30 @@
 
 	const flash = getFlash(page, {
 		clearAfterMs: 10900
+	});
+
+	// Handle version changes using the updated object
+	$effect(() => {
+		// Check if there's a new version
+		if (updated.current) {
+			console.log('New version detected, reloading page...');
+			// The service worker handles cache clearing in its 'activate' event
+			// Just invalidate all data and reload the page
+			invalidateAll();
+			window.location.reload();
+		}
+	});
+
+	// Force a version check when the component mounts
+	onMount(() => {
+		if (typeof window !== 'undefined') {
+			// Check for updates immediately
+			updated.check().then(hasUpdate => {
+				if (hasUpdate) {
+					console.log('Update found during initial check');
+				}
+			});
+		}
 	});
 </script>
 

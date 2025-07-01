@@ -1,5 +1,6 @@
 import adapter from '@sveltejs/adapter-vercel';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
+import * as child_process from 'node:child_process';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
@@ -13,7 +14,11 @@ const config = {
 		// See https://svelte.dev/docs/kit/adapters for more information about adapters.
 		adapter: adapter({
 			runtime: 'nodejs22.x'
-		})
+		}),
+		version: {
+			name: child_process.execSync('git rev-parse HEAD').toString().trim(),
+			pollInterval: 60 * 60 * 1000
+		}
 	}
 };
 
