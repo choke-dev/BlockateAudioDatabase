@@ -123,22 +123,34 @@ export const uploadAudio = async (file: Blob, filename?: string): Promise<boolea
  * @returns Array of audio objects with id and name
  */
 export const getAudios = async (): Promise<{ id: string; name: string }[]> => {
-    // Get the first available credential to fetch audios
+    // Get all available credentials to fetch audios
     const credentials = await getAvailableCredentials();
     
     if (!credentials || credentials.length === 0) {
-        console.error("No credentials available");
+        console.error("No credentials available");  
         return [];
     }
     
-    // Use the first credential's API key
-    const apiKey = credentials[0].apiKey;
+    // Create an array of promises for each API request
+    const fetchPromises = credentials.map(({ apiKey }) => {
+        return ofetch(`https://jukehost.co.uk/api/jhc/${apiKey}`)
+            .then(response => {
+                if (response && response[0] && response[0].tracks) {
+                    return response[0].tracks;
+                }
+                return [];
+            })
+            .catch(error => {
+                console.error(`Failed to get audios for API key ${apiKey}:`, error);
+                return []; // Return empty array on error to keep Promise.all working
+            });
+    });
     
-    try {
-        const response = await ofetch(`https://jukehost.co.uk/api/jhc/${apiKey}`);
-        return response[0].tracks;
-    } catch (error) {
-        console.error("Failed to get audios:", error);
-        return [];
-    }
+    // Execute all promises concurrently
+    const tracksArrays = await Promise.all(fetchPromises);
+    
+    // Flatten the array of arrays into a single array of tracks
+    const allTracks = tracksArrays.flat();
+    
+    return allTracks;
 };
