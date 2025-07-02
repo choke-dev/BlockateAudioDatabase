@@ -130,6 +130,16 @@ export const POST: RequestHandler = async (event) => {
                     filterSql = Prisma.sql` AND (${Prisma.raw(filterClausesSql)})`;
                 }
                 
+                // Prepare sort SQL based on sortOption
+                let sortSql = Prisma.sql`ORDER BY extensions.SIMILARITY(name, ${query}) DESC`;
+                
+                if (requestBody.success && requestBody.data!.sort) {
+                    const { field, order } = requestBody.data!.sort;
+                    if (validSortFields.includes(field)) {
+                        sortSql = Prisma.sql`ORDER BY ${Prisma.raw(field)} ${Prisma.raw(order)}, extensions.SIMILARITY(name, ${query}) DESC`;
+                    }
+                }
+                
                 // Promisify the search and count operations to run concurrently
                 const [searchResults, countResults] = await Promise.all([
                     // Query for audio results
@@ -141,7 +151,7 @@ export const POST: RequestHandler = async (event) => {
                             extensions.SIMILARITY(name, ${query}) > ${FUZZY_SEARCH_THRESHOLD}
                         )
                         ${filterSql}
-                        ORDER BY extensions.SIMILARITY(name, ${query}) DESC
+                        ${sortSql}
                         LIMIT ${MAX_SEARCH_RESULTS_PER_PAGE}
                         OFFSET ${(currentPage - 1) * MAX_SEARCH_RESULTS_PER_PAGE}
                     `,
