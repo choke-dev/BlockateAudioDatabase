@@ -16,6 +16,7 @@
 		clearAfterMs: 10900
 	});
 
+	let versionCheckInterval: NodeJS.Timeout;
 	// Reload immediately if outdated on first load
   	onMount(async () => {
     	if (await updated.check()) {
@@ -23,14 +24,14 @@
     	}
 
     	// Then check every hour (60*60*1000 ms)
-    	const interval = setInterval(async () => {
+    	versionCheckInterval = setInterval(async () => {
     	  if (await updated.check()) {
     	    location.reload();
     	  }
     	}, 3600000);
+	});
 
-    	onDestroy(() => clearInterval(interval));
-  	});
+	onDestroy(() => clearInterval(versionCheckInterval));
 </script>
 
 <header class="flex min-h-screen flex-col">
