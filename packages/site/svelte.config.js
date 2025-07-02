@@ -15,10 +15,10 @@ const config = {
 		adapter: adapter({
 			runtime: 'nodejs22.x'
 		}),
-		// version: {
-		// 	name: process.env.VERCEL_GIT_COMMIT_SHA ?? "DEV",
-		// 	pollInterval: 60 * 60 * 1000
-		// }
+		version: {
+			name: process.env.VERCEL_GIT_COMMIT_SHA ?? "DEV",
+			pollInterval: 60 * 60 * 1000
+		}
 	}
 };
 

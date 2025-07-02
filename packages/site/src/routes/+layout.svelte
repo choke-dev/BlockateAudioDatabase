@@ -1,21 +1,36 @@
 <script lang="ts">
-	import { getFlash } from 'sveltekit-flash-message';
 	import { page, updated } from '$app/state';
-	import { onMount } from 'svelte';
-	import { invalidateAll } from '$app/navigation';
+	import { onDestroy, onMount } from 'svelte';
+	import { getFlash } from 'sveltekit-flash-message';
 
 	import LucideCircleAlert from '~icons/lucide/circle-alert';
 	import LucideCircleCheck from '~icons/lucide/circle-check';
 	import LucideInfo from '~icons/lucide/info';
 
-	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import Header from '$lib/components/ui/custom/Header.svelte';
+	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import '../app.css';
 	let { children, data } = $props();
 
 	const flash = getFlash(page, {
 		clearAfterMs: 10900
 	});
+
+	// Reload immediately if outdated on first load
+  	onMount(async () => {
+    	if (await updated.check()) {
+    	  location.reload();
+    	}
+
+    	// Then check every hour (60*60*1000 ms)
+    	const interval = setInterval(async () => {
+    	  if (await updated.check()) {
+    	    location.reload();
+    	  }
+    	}, 3600000);
+
+    	onDestroy(() => clearInterval(interval));
+  	});
 </script>
 
 <header class="flex min-h-screen flex-col">
