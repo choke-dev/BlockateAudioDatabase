@@ -28,6 +28,7 @@
 	let currentlyPlayingId = $state<string | null>(null);
 	let lastPlayedAudioId = $state<string | null>(null);
 	let loadingAudioId = $state<string | null>(null);
+	let downloadProgress = $state<Record<string, number>>({});
 	let audioElement: HTMLAudioElement;
 	let prefetchedAudioUrls = $state<Record<string, string>>({});
 	let prefetchingAudio = $state(false);
@@ -349,17 +350,62 @@
 				return;
 			}
 			
-			// Fetch the audio as a blob
-			const audioResponse = await fetch(audioUrl);
-			if (!audioResponse.ok) {
+			// Initialize progress for this audio
+			downloadProgress = { ...downloadProgress, [audioId]: 0 };
+			
+			// Fetch the audio with progress tracking
+			const response = await fetch(audioUrl);
+			
+			if (!response.ok) {
 				errors = [{ message: 'Failed to load audio data' }];
 				loadingAudioId = null;
 				currentlyPlayingId = null;
+				downloadProgress = { ...downloadProgress, [audioId]: 0 };
 				return;
 			}
 			
-			// Get the blob from the response
-			const audioBlob = await audioResponse.blob();
+			// Get content length for progress calculation
+			const contentLength = response.headers.get('content-length');
+			const total = contentLength ? parseInt(contentLength, 10) : 0;
+			
+			let audioBlob: Blob;
+			
+			// Read the response as a stream if content length is available
+			if (total > 0 && response.body) {
+				const reader = response.body.getReader();
+				let receivedLength = 0;
+				const chunks: Uint8Array[] = [];
+				
+				while (true) {
+					const { done, value } = await reader.read();
+					
+					if (done) {
+						break;
+					}
+					
+					chunks.push(value);
+					receivedLength += value.length;
+					
+					// Update progress (0-100)
+					const progress = Math.min(Math.round((receivedLength / total) * 100), 100);
+					downloadProgress = { ...downloadProgress, [audioId]: progress };
+				}
+				
+				// Combine all chunks into a single Uint8Array
+				const chunksAll = new Uint8Array(receivedLength);
+				let position = 0;
+				for (const chunk of chunks) {
+					chunksAll.set(chunk, position);
+					position += chunk.length;
+				}
+				
+				// Create a blob from the bytes
+				audioBlob = new Blob([chunksAll]);
+			} else {
+				// Fallback if streaming not supported or content length unknown
+				audioBlob = await response.blob();
+				downloadProgress = { ...downloadProgress, [audioId]: 100 }; // Set to 100% when done
+			}
 			
 			// Store the blob for future use
 			audioBlobs = { ...audioBlobs, [audioId]: audioBlob };
@@ -371,6 +417,7 @@
 			audioElement.play();
 			loadingAudioId = null;
 			currentlyPlayingId = audioId;
+			lastPlayedAudioId = audioId;
 			
 			// When audio ends, reset the playing state
 			audioElement.onended = () => {
@@ -518,12 +565,38 @@
 							<div class="flex items-center gap-2">
 								{#if audio.version === 2}
 								<button
-									class={`flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 hover:bg-primary/20 transition-colors ${currentlyPlayingId === audio.id ? 'bg-white text-black hover:bg-white/80' : ''}`}
+									class={`flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 hover:bg-primary/20 transition-colors ${currentlyPlayingId === audio.id ? 'bg-white text-black hover:bg-white/80' : ''} relative`}
 									onclick={() => playAudio(audio.id)}
 									aria-label={currentlyPlayingId === audio.id ? "Pause audio" : "Play audio"}
 								>
 									{#if loadingAudioId === audio.id}
-										<LucideLoaderCircle class="h-4 w-4 animate-spin" />
+										{@const circleRadius = 11}
+										{@const circleCircumference = 2 * Math.PI * circleRadius}
+										<svg class="absolute inset-0 h-full w-full" viewBox="0 0 24 24">
+											<circle
+												class="text-primary/10"
+												cx="12"
+												cy="12"
+												r={circleRadius}
+												fill="none"
+												stroke="currentColor"
+												stroke-width="2"
+											/>
+											<circle
+												class="text-white"
+												cx="12"
+												cy="12"
+												r={circleRadius}
+												fill="none"
+												stroke="currentColor"
+												stroke-width="2"
+												stroke-dasharray={circleCircumference}
+												stroke-dashoffset={circleCircumference * (1 - (downloadProgress[audio.id] || 0) / 100)}
+												stroke-linecap="round"
+												transform="rotate(-90 12 12)"
+											/>
+										</svg>
+										<LucideLoaderCircle class="h-4 w-4 animate-spin relative z-10" />
 									{:else if currentlyPlayingId === audio.id}
 										<MaterialSymbolsPauseRounded class="size-6" />
 									{:else}
@@ -621,4 +694,8 @@
 
 <!-- Hidden audio element for playback -->
 <audio bind:this={audioElement} class="hidden"></audio>
+
+<style>
+  /* No animation needed as we're using actual download progress */
+</style>
 
