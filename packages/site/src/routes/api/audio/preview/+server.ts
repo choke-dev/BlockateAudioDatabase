@@ -112,6 +112,10 @@ export const POST = async (event) => {
 
         // Add the proxy URLs to the response dictionary
         for (let i = 0; i < audioUrls.length; i++) {
+            if (typeof audioUrls[i] !== 'string') {
+                console.error(`Invalid audio URL received from proxy: ${audioUrls[i]}`);
+                continue;
+            }
             audioUrlDict[audioIdsToFetch[i]] = audioUrls[i];
         }
         
