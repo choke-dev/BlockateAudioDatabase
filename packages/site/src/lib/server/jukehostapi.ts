@@ -1,5 +1,6 @@
 import { ofetch } from "ofetch";
 import { getAvailableCredentials } from "./credentialService";
+import pLimit from "p-limit";
 
 // Cache for storing the number of uploads per owner
 const ownerUploadsCache = new Map<number, { count: number; timestamp: number }>();
@@ -153,4 +154,46 @@ export const getAudios = async (): Promise<{ id: string; name: string }[]> => {
     const allTracks = tracksArrays.flat();
     
     return allTracks;
+};
+
+/**
+ * Check if an audio URL is still valid
+ * @param url The audio URL to check
+ * @returns True if the URL is valid, false otherwise
+ */
+export const isAudioUrlValid = async (url: string): Promise<boolean> => {
+    try {
+        const response = await fetch(url, {
+            method: "HEAD"
+        });
+        return response.status === 200;
+    } catch (error) {
+        console.error(`Failed to check audio URL ${url}:`, error);
+        return false;
+    }
+};
+
+/**
+ * Check multiple audio URLs with concurrency limit
+ * @param urls Array of audio URLs to check
+ * @param concurrency Maximum number of concurrent requests
+ * @returns Object mapping URLs to their validity status
+ */
+export const checkAudioUrls = async (
+    urls: string[],
+    concurrency = 5
+): Promise<Record<string, boolean>> => {
+    const limit = pLimit(concurrency);
+    const results: Record<string, boolean> = {};
+    
+    const promises = urls.map(url =>
+        limit(async () => {
+            const isValid = await isAudioUrlValid(url);
+            results[url] = isValid;
+            return { url, isValid };
+        })
+    );
+    
+    await Promise.all(promises);
+    return results;
 };
