@@ -15,9 +15,10 @@ const validSortFields = ['id', 'name', 'category', 'created_at'];
 export const POST: RequestHandler = async (event) => {
     const status = await _limiter.check(event);
     if (status.limited) {
-        return new Response(JSON.stringify({ 
-            errors: [ { message: `You are being rate limited. Please try again after ${status.retryAfter} second${Math.abs(status.retryAfter) === 1 ? '' : 's'}.` } ] }),
-            { 
+        return new Response(JSON.stringify({
+            errors: [{ message: `You are being rate limited. Please try again after ${status.retryAfter} second${Math.abs(status.retryAfter) === 1 ? '' : 's'}.` }]
+        }),
+            {
                 status: 429,
                 headers: {
                     "Retry-After": String(status.retryAfter)
@@ -28,7 +29,7 @@ export const POST: RequestHandler = async (event) => {
 
     try {
         const query = decodeURIComponent(event.url.searchParams.get('keyword') ?? '');
-        
+
         // Fetch paginated audios from the database
         const pageParam = event.url.searchParams.get('page');
         const currentPage = pageParam ? Number(pageParam) : 1;
@@ -46,12 +47,12 @@ export const POST: RequestHandler = async (event) => {
         let filterConditions: Record<string, { contains: string; mode: 'insensitive' }>[] = [];
         let sortOption = {};
         let filterType = "AND";
-        
+
         if (requestBody.success) {
             // Handle filters
             if (requestBody.data!.filters && requestBody.data!.filters.filters) {
                 const filterData = requestBody.data!.filters.filters;
-                
+
                 // Only add filters with non-empty inputValue
                 filterConditions = filterData
                     .filter(({ inputValue }) => inputValue.trim() !== '')
@@ -63,17 +64,17 @@ export const POST: RequestHandler = async (event) => {
                             },
                         };
                     });
-                
+
                 // Set filter type (AND/OR)
                 if (requestBody.data!.filters.type) {
                     filterType = requestBody.data!.filters.type.toUpperCase();
                 }
             }
-            
+
             // Handle sort
             if (requestBody.data!.sort) {
                 const { field, order } = requestBody.data!.sort;
-                
+
                 // Validate sort field
                 if (!validSortFields.includes(field)) {
                     return new Response(
@@ -81,7 +82,7 @@ export const POST: RequestHandler = async (event) => {
                         { status: 400 }
                     );
                 }
-                
+
                 sortOption = {
                     orderBy: {
                         [field]: order
@@ -94,7 +95,7 @@ export const POST: RequestHandler = async (event) => {
         const whereClause: any = {
             private: false
         };
-        
+
         // Add name search if query exists
         if (query) {
             whereClause.name = {
@@ -102,49 +103,49 @@ export const POST: RequestHandler = async (event) => {
                 mode: 'insensitive',
             };
         }
-        
+
         // Add filter conditions if they exist
         if (filterConditions.length > 0) {
             whereClause[filterType] = filterConditions;
         }
-        
+
         let audios;
         let total;
-        
+
         // Check if query exists and use either SIMILARITY or standard search
         if (query) {
             try {
                 // Build filter SQL fragment
                 let filterSql = Prisma.empty;
-                
+
                 if (filterConditions.length > 0) {
                     const filterClauses: string[] = [];
-                    
+
                     filterConditions.forEach(condition => {
                         const field = Object.keys(condition)[0];
                         const value = condition[field].contains;
                         filterClauses.push(`${field} ILIKE '%${value}%'`);
                     });
-                    
+
                     const filterClausesSql = filterClauses.join(filterType === 'AND' ? ' AND ' : ' OR ');
                     filterSql = Prisma.sql` AND (${Prisma.raw(filterClausesSql)})`;
                 }
-                
+
                 // Prepare sort SQL based on sortOption
                 let sortSql = Prisma.sql`ORDER BY extensions.SIMILARITY(name, ${query}) DESC`;
-                
+
                 if (requestBody.success && requestBody.data!.sort) {
                     const { field, order } = requestBody.data!.sort;
                     if (validSortFields.includes(field)) {
                         sortSql = Prisma.sql`ORDER BY ${Prisma.raw(field)} ${Prisma.raw(order)}, extensions.SIMILARITY(name, ${query}) DESC`;
                     }
                 }
-                
+
                 // Promisify the search and count operations to run concurrently
                 const [searchResults, countResults] = await Promise.all([
                     // Query for audio results
                     prisma.$queryRaw<any[]>`
-                        SELECT * FROM "Audio"
+                        SELECT "id", "name", "category", "whitelisterName", "whitelisterType", "whitelisterUserId", "audioUrl", "version", "created_at" FROM public."Audio"
                         WHERE private = false
                         AND (
                             name ILIKE ${`%${query}%`} OR
@@ -155,7 +156,7 @@ export const POST: RequestHandler = async (event) => {
                         LIMIT ${MAX_SEARCH_RESULTS_PER_PAGE}
                         OFFSET ${(currentPage - 1) * MAX_SEARCH_RESULTS_PER_PAGE}
                     `,
-                    
+
                     // Query for total count
                     prisma.$queryRaw<{ count: BigInt }[]>`
                         SELECT COUNT(*) as count FROM "Audio"
@@ -167,13 +168,13 @@ export const POST: RequestHandler = async (event) => {
                         ${filterSql}
                     `
                 ]);
-                
+
                 audios = searchResults;
                 total = Number(countResults[0].count);
             } catch (error) {
                 // If SIMILARITY fails, fall back to standard ILIKE search
                 console.warn("SIMILARITY search failed, falling back to ILIKE:", error);
-                
+
                 // Promisify the standard search and count operations
                 const [searchResults, countResult] = await Promise.all([
                     // Standard Prisma query for results
@@ -181,15 +182,26 @@ export const POST: RequestHandler = async (event) => {
                         where: whereClause,
                         skip: (currentPage - 1) * MAX_SEARCH_RESULTS_PER_PAGE,
                         take: MAX_SEARCH_RESULTS_PER_PAGE,
+                        select: {
+                            id: true,
+                            name: true,
+                            category: true,
+                            whitelisterName: true,
+                            whitelisterType: true,
+                            whitelisterUserId: true,
+                            audioUrl: true,
+                            version: true,
+                            created_at: true
+                        },
                         ...sortOption
                     }),
-                    
+
                     // Standard Prisma query for count
                     prisma.audio.count({
                         where: whereClause,
                     })
                 ]);
-                
+
                 audios = searchResults;
                 total = countResult;
             }
@@ -200,14 +212,25 @@ export const POST: RequestHandler = async (event) => {
                     where: whereClause,
                     skip: (currentPage - 1) * MAX_SEARCH_RESULTS_PER_PAGE,
                     take: MAX_SEARCH_RESULTS_PER_PAGE,
+                    select: {
+                        id: true,
+                        name: true,
+                        category: true,
+                        whitelisterName: true,
+                        whitelisterType: true,
+                        whitelisterUserId: true,
+                        audioUrl: true,
+                        version: true,
+                        created_at: true
+                    },
                     ...sortOption
                 }),
-                
+
                 prisma.audio.count({
                     where: whereClause,
                 })
             ]);
-            
+
             audios = searchResults;
             total = countResult;
         }
@@ -233,7 +256,7 @@ export const POST: RequestHandler = async (event) => {
         console.error("Server Error:", error);
 
         if (error instanceof Error) {
-            
+
             return new Response(
                 JSON.stringify({ errors: [{ message: 'Could not contact audio database, please try again later.' }] }),
                 { status: 500 }
