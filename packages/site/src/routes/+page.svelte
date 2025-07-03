@@ -312,7 +312,9 @@
 			const cachedUrls = loadFromCache();
 			
 			// Use prefetched URL if available, otherwise fetch it
-			let audioUrl = prefetchedAudioUrls[audioId] || cachedUrls[audioId] || searchResults[Number(audioId)]?.audioUrl;
+			// Find the audio object in searchResults by matching the ID
+			const audioObject = searchResults.find(audio => audio.id === audioId);
+			let audioUrl = prefetchedAudioUrls[audioId] || cachedUrls[audioId] || audioObject?.audioUrl;
 			
 			if (!audioUrl) {
 				// Fetch the audio URL from the API if not cached
@@ -354,14 +356,85 @@
 			downloadProgress = { ...downloadProgress, [audioId]: 0 };
 			
 			// Fetch the audio with progress tracking
-			const response = await fetch(audioUrl);
+			let response = await fetch(audioUrl)
+				.catch(error => error); // lol
 			
+			// If the audio fails to load and we haven't tried the API yet, try fetching from API
 			if (!response.ok) {
-				errors = [{ message: 'Failed to load audio data' }];
-				loadingAudioId = null;
-				currentlyPlayingId = null;
-				downloadProgress = { ...downloadProgress, [audioId]: 0 };
-				return;
+				// Check if we were using a direct audioUrl from the audio object
+				const wasUsingDirectUrl = audioObject?.audioUrl === audioUrl;
+				
+				if (wasUsingDirectUrl) {
+					// Try to fetch a new URL from the API
+					console.warn(`Direct audioUrl failed for ${audioId}, contacting API for a valid URL...`);
+					try {
+						const apiResponse = await fetch('/api/audio/preview', {
+							method: 'POST',
+							headers: {
+								'Content-Type': 'application/json'
+							},
+							body: JSON.stringify([audioId])
+						});
+						
+						if (apiResponse.ok) {
+							const audioUrls = await apiResponse.json();
+							const newAudioUrl = audioUrls[audioId];
+							
+							if (newAudioUrl && newAudioUrl !== audioUrl) {
+								// Update cache with the new URL
+								const updatedCache = { ...cachedUrls, [audioId]: newAudioUrl };
+								prefetchedAudioUrls = updatedCache;
+								saveToCache(updatedCache);
+								
+								// Try again with the new URL
+								audioUrl = newAudioUrl;
+								// Ensure audioUrl is not null before fetching
+								if (audioUrl) {
+									response = await fetch(audioUrl);
+								} else {
+									throw new Error("New audio URL is null");
+								}
+								
+								// If still not ok, show error
+								if (!response.ok) {
+									errors = [{ message: 'Failed to load audio data even after API refresh' }];
+									loadingAudioId = null;
+									currentlyPlayingId = null;
+									downloadProgress = { ...downloadProgress, [audioId]: 0 };
+									return;
+								}
+							} else {
+								// API didn't return a new URL or returned the same one
+								errors = [{ message: 'Failed to load audio data' }];
+								loadingAudioId = null;
+								currentlyPlayingId = null;
+								downloadProgress = { ...downloadProgress, [audioId]: 0 };
+								return;
+							}
+						} else {
+							// API call failed
+							errors = [{ message: 'Failed to load audio data and API refresh failed' }];
+							loadingAudioId = null;
+							currentlyPlayingId = null;
+							downloadProgress = { ...downloadProgress, [audioId]: 0 };
+							return;
+						}
+					} catch (error) {
+						console.error('Error fetching from API:', error);
+						errors = [{ message: 'Failed to load audio data' }];
+						loadingAudioId = null;
+						currentlyPlayingId = null;
+						downloadProgress = { ...downloadProgress, [audioId]: 0 };
+						return;
+					}
+				} else {
+					// We weren't using a direct URL, so just show the error
+					errors = [{ message: 'Failed to load audio data' }];
+					loadingAudioId = null;
+					currentlyPlayingId = null;
+					downloadProgress = { ...downloadProgress, [audioId]: 0 };
+					return;
+				}
 			}
 			
 			// Get content length for progress calculation
