@@ -17,11 +17,9 @@ const MAX_UPLOADS_PER_ACCOUNT = 1000;
  */
 const getOwnerTrackCount = async (apiKey: string, ownerId: number): Promise<number> => {
     try {
-        const response = await ofetch(`https://jukehost.co.uk/api/jhc/${apiKey}`);
+        const response = await ofetch<{ name: string; tracks: { id: string; name: string; }[] }[]>(`https://jukehost.co.uk/api/jhc/${apiKey}`);
         // Filter tracks by owner ID and count them
-        const tracks = response[0].tracks.filter((track: any) =>
-            track.owner === ownerId.toString()
-        );
+        const tracks = response[0].tracks;
         return tracks.length;
     } catch (error) {
         console.error(`Failed to get track count for owner ${ownerId}:`, error);
@@ -61,6 +59,7 @@ const getAvailableOwner = async (): Promise<{ ownerId: number; apiKey: string } 
         }
         
         // If this owner hasn't reached the limit, use it
+        console.log(`Owner ${ownerId} has ${trackCount} tracks`);
         if (trackCount < MAX_UPLOADS_PER_ACCOUNT) {
             return { ownerId, apiKey };
         }
