@@ -46,7 +46,13 @@
 						<p>Current Deployment ID: {data.deploymentID}</p>
 						<p>
 							Current Deployment Commit SHA: 
-							<a class="underline underline-offset-2" href={`https://github.com/choke-dev/BlockateAudioDatabase/commit/${data.deploymentCommitSHA}`}>{data.deploymentCommitSHA}</a>
+							<a 
+							class="underline underline-offset-2" 
+							href={`https://github.com/choke-dev/BlockateAudioDatabase/commit/${data.deploymentCommitSHA}`}
+							target="_blank"
+							>
+								{data.deploymentCommitSHA}
+							</a>
 						</p>
 					</Dialog.Description>
 				</Dialog.Header>
