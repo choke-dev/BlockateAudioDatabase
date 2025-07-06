@@ -29,6 +29,9 @@ importers:
       '@tanstack/table-core':
         specifier: ^8.20.5
         version: 8.20.5
+      '@urbanzoo/remove-accents':
+        specifier: ^1.0.2
+        version: 1.0.2
       arctic:
         specifier: ^3.1.1
         version: 3.1.1
@@ -1466,6 +1469,9 @@ packages:
   '@typescript-eslint/visitor-keys@8.19.1':
     resolution: {integrity: sha512-fzmjU8CHK853V/avYZAvuVut3ZTfwN5YtMaoi+X9Y9MA9keaWNHC3zEQ9zvyX/7Hj+5JkNyK1l7TOR2hevHB6Q==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+
+  '@urbanzoo/remove-accents@1.0.2':
+    resolution: {integrity: sha512-dn3mywFUFhILhSNoa2XW59UD7oSwJ5TydNUBKhisA9tUs69iq+fQb0zrL/zUwUjZuQ/jfqD+pDMvrLfHGp6gWA==}
 
   '@vercel/build-utils@9.2.0':
     resolution: {integrity: sha512-e6S+gj+UNsaWH93fRF59HDhNbEypqQlOFJWJcrjrxodmLReXs9lHaYrouPVt3O/3wrQPY1GYKAH7lonQ39Op3Q==}
@@ -4779,6 +4785,8 @@ snapshots:
     dependencies:
       '@typescript-eslint/types': 8.19.1
       eslint-visitor-keys: 4.2.0
+
+  '@urbanzoo/remove-accents@1.0.2': {}
 
   '@vercel/build-utils@9.2.0': {}
 
