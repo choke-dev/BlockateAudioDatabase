@@ -5,6 +5,7 @@ import { PrismaClientInitializationError } from "@prisma/client/runtime/library"
 import { RetryAfterRateLimiter } from 'sveltekit-rate-limiter/server';
 import { Prisma } from "@prisma/client";
 import type { RequestHandler } from "./$types";
+import { removeAccentsEnhanced } from '@urbanzoo/remove-accents';
 
 export const _limiter = new RetryAfterRateLimiter({
     IP: [5, 's']
@@ -28,7 +29,7 @@ export const POST: RequestHandler = async (event) => {
     }
 
     try {
-        const query = decodeURIComponent(event.url.searchParams.get('keyword') ?? '');
+        const query = removeAccentsEnhanced(decodeURIComponent(event.url.searchParams.get('keyword') ?? '')).trim();
 
         // Fetch paginated audios from the database
         const pageParam = event.url.searchParams.get('page');
