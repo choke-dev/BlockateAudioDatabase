@@ -15,18 +15,8 @@
         <img
         src="/audiodb.png"
         alt="Blockate Audio Browser Logo"
-        class="hidden md:block size-10"
+        class="size-10"
       />
-      </a>
-    </div>
-
-    <div class="absolute items-center left-1/2 transform -translate-x-1/2">
-      <a href="/">
-        <img
-        src="/audiodb.png"
-        alt="Blockate Audio Browser Logo"
-        class="block md:hidden size-10"
-        />
       </a>
     </div>
 

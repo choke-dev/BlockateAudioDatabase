@@ -88,14 +88,11 @@
 		class="fixed inset-0 -z-50 h-full w-full bg-[radial-gradient(#241C1C_1px,transparent_1px)] [background-size:16px_16px]"
 	></div>
 	<!-- optimally, i would want this to calculate the color based on the background with a lighter shade, but i dont know how, if you're reading this and know how, please let me know -->
-	<div class="fixed inset-x-0 top-0 z-50 hidden md:block">
+	<div class="fixed inset-x-0 top-0 z-50">
 		<Header />
 	</div>
 	<div class="mb-14 mt-0 flex-grow md:mb-0 md:mt-14">
 		{@render children()}
-	</div>
-	<div class="fixed inset-x-0 bottom-0 z-50 md:hidden">
-		<Header />
 	</div>
 </header>
 

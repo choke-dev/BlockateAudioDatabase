@@ -44,7 +44,7 @@
             {#snippet child({ props })}
                 <Button {...props} variant={appliedFilters.length === 0 ? "outline" : "default"} class="flex items-center">
                     <LucideFilter class="mr-2" /> 
-                    {appliedFilters.length === 0 ? "Filter" : `Filtered by ${appliedFilters.length} rule${Math.abs(appliedFilters.length) === 1 ? "" : "s"}`}
+                    <span class="hidden md:block">{appliedFilters.length === 0 ? "Filter" : `Filtered by ${appliedFilters.length} rule${Math.abs(appliedFilters.length) === 1 ? "" : "s"}`}</span>
                 </Button>
 	        {/snippet}
         </Popover.Trigger>
