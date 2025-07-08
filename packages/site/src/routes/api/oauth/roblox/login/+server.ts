@@ -3,7 +3,7 @@ import { robloxOAuth } from '$lib/server/oauth.js';
 import { randomBytes } from 'crypto';
 import type { RequestHandler } from '@sveltejs/kit';
 
-export const POST: RequestHandler = async ({ cookies }) => {
+export const POST: RequestHandler = async ({ cookies, url }) => {
   try {
     // Generate PKCE parameters
     const { codeVerifier, codeChallenge } = robloxOAuth.generatePKCE();
@@ -28,8 +28,9 @@ export const POST: RequestHandler = async ({ cookies }) => {
       path: '/'
     });
     
-    // Generate authorization URL
-    const authUrl = robloxOAuth.getAuthorizationUrl(state, codeChallenge);
+    // Generate authorization URL with current hostname
+    const hostname = url.hostname + (url.port ? `:${url.port}` : '');
+    const authUrl = robloxOAuth.getAuthorizationUrl(state, codeChallenge, hostname);
     
     return json({
       success: true,

@@ -36,7 +36,8 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
     cookies.delete('oauth_code_verifier', { path: '/' });
     
     // Exchange code for tokens
-    const tokens = await robloxOAuth.exchangeCodeForTokens(code, codeVerifier);
+    const hostname = url.hostname + (url.port ? `:${url.port}` : '');
+    const tokens = await robloxOAuth.exchangeCodeForTokens(code, codeVerifier, hostname);
     
     // Get user info from Roblox
     const userInfo = await robloxOAuth.getUserInfo(tokens.access_token);

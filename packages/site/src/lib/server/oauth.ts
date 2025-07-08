@@ -31,7 +31,6 @@ export interface TokenResponse {
 export class RobloxOAuthService {
   private clientId = ROBLOX_CLIENT_ID;
   private clientSecret = ROBLOX_CLIENT_SECRET;
-  private redirectUri = ROBLOX_REDIRECT_URI;
 
   /**
    * Generate PKCE code verifier and challenge
@@ -59,10 +58,11 @@ export class RobloxOAuthService {
   /**
    * Generate authorization URL with PKCE
    */
-  getAuthorizationUrl(state: string, codeChallenge: string) {
+  getAuthorizationUrl(state: string, codeChallenge: string, hostname: string) {
+    const redirectUri = this.getRedirectUri(hostname);
     const params = new URLSearchParams({
       client_id: this.clientId,
-      redirect_uri: this.redirectUri,
+      redirect_uri: redirectUri,
       scope: ROBLOX_SCOPES.join(" "),
       response_type: "code",
       state,
@@ -76,7 +76,8 @@ export class RobloxOAuthService {
   /**
    * Exchange authorization code for tokens
    */
-  async exchangeCodeForTokens(code: string, codeVerifier: string): Promise<TokenResponse> {
+  async exchangeCodeForTokens(code: string, codeVerifier: string, hostname: string): Promise<TokenResponse> {
+    const redirectUri = this.getRedirectUri(hostname);
     const response = await fetch(ROBLOX_OAUTH_ENDPOINTS.token, {
       method: "POST",
       headers: {
@@ -86,7 +87,7 @@ export class RobloxOAuthService {
       body: new URLSearchParams({
         client_id: this.clientId,
         client_secret: this.clientSecret,
-        redirect_uri: this.redirectUri,
+        redirect_uri: redirectUri,
         grant_type: "authorization_code",
         code,
         code_verifier: codeVerifier
@@ -285,6 +286,15 @@ export class RobloxOAuthService {
     });
 
     return user.id;
+  }
+
+  /**
+   * Generate redirect URI based on hostname
+   */
+  private getRedirectUri(hostname: string): string {
+    // Determine protocol based on hostname
+    const protocol = hostname.includes('localhost') || hostname.includes('127.0.0.1') ? 'http' : 'https';
+    return `${protocol}://${hostname}/api/oauth/roblox/callback`;
   }
 }
 
