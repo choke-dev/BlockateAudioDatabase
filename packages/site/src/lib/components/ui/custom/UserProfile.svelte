@@ -3,14 +3,20 @@
     import { Button } from '$lib/components/ui/button';
     import LucideUser from '~icons/lucide/user';
     import LucideLogOut from '~icons/lucide/log-out';
+    import LucideLoaderCircle from '~icons/lucide/loader-circle';
 
     let { user } = $props();
 
+    let loading = $state(false);
+
     async function handleLogout() {
+        loading = true;
         try {
             await auth.logout();
         } catch (error) {
             console.error('Logout failed:', error);
+        } finally {
+            loading = false;
         }
     }
 </script>
@@ -29,8 +35,12 @@
         <span class="hidden md:inline text-sm font-medium">@{user.username}</span>
     </div>
     
-    <Button variant="outline" size="sm" onclick={handleLogout} class="flex items-center gap-1">
-        <LucideLogOut class="h-4 w-4" />
-        <span class="hidden md:inline">Logout</span>
+    <Button variant="outline" size="sm" onclick={loading ? null : handleLogout} class="flex items-center gap-1" disabled={loading}>
+        {#if loading}
+            <LucideLoaderCircle class="h-4 w-4 animate-spin" />
+        {:else}
+            <LucideLogOut class="h-4 w-4" />
+        {/if}
+        <span class="hidden md:inline">{loading ? 'Logging out...' : 'Logout'}</span>
     </Button>
 </div>

@@ -13,8 +13,9 @@
             await auth.login();
         } catch (error) {
             console.error('Login failed:', error);
+        } finally {
             loading = false;
-        }
+        } 
     }
 </script>
 
