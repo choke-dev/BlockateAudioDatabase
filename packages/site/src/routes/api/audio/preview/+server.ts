@@ -3,12 +3,13 @@ import { prisma } from '$lib/server/db.js';
 import { checkAudioUrls, getAudios, uploadAudio } from '$lib/server/jukehostapi.js';
 import { AudioPreviewAPISchema } from '$lib/zodSchemas.js';
 import { RetryAfterRateLimiter } from 'sveltekit-rate-limiter/server';
+import type { RequestHandler } from './$types.js';
 
 export const _limiter = new RetryAfterRateLimiter({
     IP: [6, 's']
 });
 
-export const POST = async (event) => {
+const previewHandler: RequestHandler = async (event) => {
     const status = await _limiter.check(event);
     if (status.limited) {
         return new Response(JSON.stringify({
@@ -218,3 +219,6 @@ export const POST = async (event) => {
     // Return all available URLs (both from JukeHost and proxy)
     return new Response(JSON.stringify(audioUrlDict), { status: 200 });
 }
+
+// Export the handler directly (permission checking now handled in hooks.server.ts)
+export const POST = previewHandler;

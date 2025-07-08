@@ -22,3 +22,70 @@ model Audio {
   created_at DateTime @default(now()) @db.Timestamptz()
   updated_at DateTime @default(now()) @db.Timestamptz()
 }
+
+model User {
+  id        String   @id @default(cuid())
+  robloxId  String   @unique
+  username  String
+  avatar    String?
+  createdAt DateTime @default(now()) @db.Timestamptz()
+  updatedAt DateTime @updatedAt @db.Timestamptz()
+
+  sessions         Session[]
+  oauthTokens      OAuthToken[]
+  whitelistRequests WhitelistRequest[]
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  expiresAt DateTime @db.Timestamptz()
+  createdAt DateTime @default(now()) @db.Timestamptz()
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model OAuthToken {
+  id           String    @id @default(cuid())
+  userId       String
+  provider     String    // "roblox"
+  accessToken  String
+  refreshToken String?
+  expiresAt    DateTime? @db.Timestamptz()
+  scope        String?
+  createdAt    DateTime  @default(now()) @db.Timestamptz()
+  updatedAt    DateTime  @updatedAt @db.Timestamptz()
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider])
+  @@map("oauth_tokens")
+}
+
+
+model WhitelistRequest {
+  id        String   @id @default(cuid())
+  audioId   String
+  name      String
+  category  String
+  userId    String
+  reason    String?
+  status    WhitelistRequestStatus @default(PENDING)
+  createdAt DateTime @default(now()) @db.Timestamptz()
+  updatedAt DateTime @updatedAt @db.Timestamptz()
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([audioId, userId])
+  @@map("whitelist_requests")
+}
+
+enum WhitelistRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}

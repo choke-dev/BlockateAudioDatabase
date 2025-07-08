@@ -9,7 +9,9 @@
 
 	import Header from '$lib/components/ui/custom/Header.svelte';
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
+	import { auth } from '$lib/stores/auth.js';
 	import '../app.css';
+	import type { User } from '@prisma/client';
 	let { children, data } = $props();
 
 	const flash = getFlash(page, {
@@ -19,6 +21,10 @@
 	let versionCheckInterval: NodeJS.Timeout;
 	// Reload immediately if outdated on first load
   	onMount(async () => {
+		// Initialize auth store with server data
+		//@ts-ignore
+		auth.setUser(data.user);
+		
     	if (await updated.check()) {
     	  location.reload();
     	}

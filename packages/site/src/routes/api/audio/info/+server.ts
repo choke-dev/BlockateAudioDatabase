@@ -1,14 +1,15 @@
 import { prisma } from '$lib/server/db.js'
+import type { RequestHandler } from './$types.js'
 
-
-export const GET = async ({ url }) => {
+const infoHandler: RequestHandler = async (event) => {
+    const { url } = event;
     const IDs = url.searchParams.get('id');
     
     if (!IDs) {
         return new Response(JSON.stringify({ errors: [{ message: 'Missing "id" query parameter' }] }), { status: 400 })
     }
 
-    const audioIds = IDs.split(',').map(id => id.trim());
+    const audioIds = IDs.split(',').map((id: string) => id.trim());
 
     // Get unique IDs for the database query
     const uniqueAudioIds = [...new Set(audioIds)];
@@ -31,10 +32,10 @@ export const GET = async ({ url }) => {
 
     // Reconstruct the response array preserving the original order and duplicates
     // Set non-existent entries as null instead of filtering them out
-    const audios = audioIds.map(id => audioMap.get(id) || null);
+    const audios = audioIds.map((id: string) => audioMap.get(id) || null);
 
     // Check if all entries are null (all IDs were not found)
-    const allNull = audios.every(audio => audio === null);
+    const allNull = audios.every((audio: any) => audio === null);
     
     if (allNull) {
         return new Response(JSON.stringify({ errors: [{ message: 'Audio not found' }] }), { status: 404 })
@@ -42,3 +43,6 @@ export const GET = async ({ url }) => {
 
     return new Response(JSON.stringify(audios), { status: 200 })
 }
+
+// Export the handler directly (permission checking now handled in hooks.server.ts)
+export const GET = infoHandler;

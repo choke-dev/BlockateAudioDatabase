@@ -3,14 +3,18 @@
     import LucideLoaderCircle from '~icons/lucide/loader-circle';
     
 	import { Button } from '$lib/components/ui/button';
+    import { auth } from '$lib/stores/auth.js';
 
     let loading = $state(false);
+    
     async function login() {
         loading = true;
-        const response = await fetch('/api/oauth/roblox/login', { method: 'POST' })
-        if (!response.ok) {loading = false;return;}
-        window.location.href = (await response.json()).data
-        loading = false;
+        try {
+            await auth.login();
+        } catch (error) {
+            console.error('Login failed:', error);
+            loading = false;
+        }
     }
 </script>
 

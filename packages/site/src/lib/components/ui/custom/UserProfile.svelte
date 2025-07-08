@@ -1,0 +1,36 @@
+<script lang="ts">
+    import { auth } from '$lib/stores/auth.js';
+    import { Button } from '$lib/components/ui/button';
+    import LucideUser from '~icons/lucide/user';
+    import LucideLogOut from '~icons/lucide/log-out';
+
+    let { user } = $props();
+
+    async function handleLogout() {
+        try {
+            await auth.logout();
+        } catch (error) {
+            console.error('Logout failed:', error);
+        }
+    }
+</script>
+
+<div class="flex items-center gap-2">
+    <div class="flex items-center gap-2">
+        {#if user.avatar}
+            <img
+                src={user.avatar}
+                alt={user.username}
+                class="h-8 w-8 rounded-full"
+            />
+        {:else}
+            <LucideUser class="h-6 w-6" />
+        {/if}
+        <span class="hidden md:inline text-sm font-medium">@{user.username}</span>
+    </div>
+    
+    <Button variant="outline" size="sm" onclick={handleLogout} class="flex items-center gap-1">
+        <LucideLogOut class="h-4 w-4" />
+        <span class="hidden md:inline">Logout</span>
+    </Button>
+</div>

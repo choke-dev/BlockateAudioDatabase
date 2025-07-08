@@ -1,6 +1,11 @@
 <script lang="ts">
   import * as Sheet from "$lib/components/ui/sheet/index.js";
   import SocialLinks from "./SocialLinks.svelte";
+  import LoginWithProvider from "./LoginWithProvider.svelte";
+  import UserProfile from "./UserProfile.svelte";
+  import WhitelistRequestForm from "./WhitelistRequestForm.svelte";
+  import WhitelistRequestsList from "./WhitelistRequestsList.svelte";
+  import { auth } from '$lib/stores/auth.js';
   
   // Icons
   import LucideMenu from '~icons/lucide/menu';
@@ -20,9 +25,17 @@
       </a>
     </div>
 
-    <div class="flex items-center">
-      <div class="hidden md:flex items-center gap-x-3">
-        <SocialLinks class="mr-2" />
+    <div class="flex items-center gap-4">
+      <div class="hidden md:flex items-center gap-x-3">        
+        
+        {#if $auth.authenticated && $auth.user}
+          <WhitelistRequestForm />
+          <WhitelistRequestsList />
+          <div class="h-4 w-px bg-border"></div>
+          <UserProfile user={$auth.user} />
+        {:else if !$auth.loading}
+          <LoginWithProvider />
+        {/if}
       </div>
 
       <Sheet.Root>
@@ -32,6 +45,14 @@
 
           <div class="flex flex-col gap-y-2 items-center">
             <SocialLinks />
+            
+            {#if $auth.authenticated && $auth.user}
+              <WhitelistRequestForm />
+              <WhitelistRequestsList />
+              <UserProfile user={$auth.user} />
+            {:else if !$auth.loading}
+              <LoginWithProvider />
+            {/if}
           </div>
 
         </Sheet.Content>

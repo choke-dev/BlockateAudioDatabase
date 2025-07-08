@@ -50,3 +50,22 @@ export const SearchFilterSchema = z.object({
     filterType: z.enum(["and", "or"]),
     sort: SearchSortSchema.optional()
 });
+
+export const WhitelistRequestSchema = z.object({
+    audioId: z.string().min(1, "Audio ID is required"),
+    name: z.string().min(1, "Name is required"),
+    category: z.string().min(1, "Category is required"),
+    reason: z.string().optional()
+});
+
+export const WhitelistRequestResponseSchema = z.object({
+    id: z.string(),
+    audioId: z.string(),
+    name: z.string(),
+    category: z.string(),
+    userId: z.string(),
+    reason: z.string().nullable(),
+    status: z.enum(["PENDING", "APPROVED", "REJECTED"]),
+    createdAt: z.string(),
+    updatedAt: z.string()
+});
