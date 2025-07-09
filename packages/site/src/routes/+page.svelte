@@ -1,25 +1,11 @@
 <script lang="ts">
-	import { Button } from '$lib/components/ui/button';
-	import { Input } from '$lib/components/ui/input';
-	import * as Pagination from '$lib/components/ui/pagination/index';
-	import * as Table from '$lib/components/ui/table/index';
-	
-	import LucideCircleAlert from '~icons/lucide/circle-alert';
-	import LucideLoaderCircle from '~icons/lucide/loader-circle';
-	import LucideSearch from '~icons/lucide/search';
-	import LucideX from '~icons/lucide/x';
-	import MaterialSymbolsPlayArrowRounded from '~icons/material-symbols/play-arrow-rounded';
-	import MaterialSymbolsPauseRounded from '~icons/material-symbols/pause-rounded';
-	import LucideArrowRight from '~icons/lucide/arrow-right';
-
-	import SearchFilter from '$lib/components/ui/custom/SearchFilter.svelte';
-	import SearchSort from '$lib/components/ui/custom/SearchSort.svelte'; 
-	import { MAX_SEARCH_RESULTS_PER_PAGE } from '$lib/config/search';
+	import ErrorDisplay from '$lib/components/ui/custom/ErrorDisplay.svelte';
+	import SearchForm from '$lib/components/ui/custom/SearchForm.svelte';
+	import SearchResults from '$lib/components/ui/custom/SearchResults.svelte';
 	import type { Audio } from '@prisma/client';
 	import { onMount, onDestroy } from 'svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
-	import { buildWhitelisterUrl } from '$lib/whitelister';
 	import { browser } from '$app/environment';
 
 	let errors = $state<{ message: string }[]>([]);
@@ -52,7 +38,7 @@
 
 		started = true;
 		loading = true;
-        errors = []
+        errors = [ { message: 'test' } ]
 		searchResults = [];
 		audioElement.pause();
 		currentlyPlayingId = null;
@@ -552,223 +538,32 @@
 	<title>Blockate Audio Browser</title>
 </svelte:head>
 
-{#if errors.length > 0}
-    <div class={`mb-8 flex items-center justify-center ${ errors.length > 0 ? 'mt-4' : '' }`}>
-        {#each errors as error}
-            <div class="w-[75%] rounded-lg bg-[#3b0703]">
-                <div class="flex p-4 font-poppins text-[#fab4af]">
-                    <div class="mr-3 flex flex-col">
-                        <LucideCircleAlert class="h-6" />
-                    </div>
-                    <div>
-                        <h1 class="font-bold">Error</h1>
-                        <p>{error.message}</p>
-                    </div>
-                </div>
-            </div>
-        {/each}
-    </div>
-{/if}
+<ErrorDisplay {errors} />
 
-<div class="mx-auto flex w-full max-w-[75%] items-center">
-	<div class={`relative mx-auto mb-8 flex w-full items-center justify-between gap-x-2 ${ errors.length > 0 ? '' : 'mt-32' }`}>
-		<form onsubmit={handleSearch} class="flex w-full max-w-lg items-center gap-x-2">
-			<div class="flex flex-grow items-center gap-x-2">
-				<div class="flex relative flex-grow">
-					<Input bind:value={keyword} name="keyword" placeholder="Search..." class="w-full" />
-					{#if lastSearchKeyword.length > 0}
-						<Button 
-						variant="ghost" 
-						size="icon"
-						class="absolute right-0 top-0 h-full rounded-none rounded-br-lg rounded-tr-lg"
-						onclick={() => {
-							keyword = ''
-							handleSearch()
-						}}
-						>
-							<LucideX />
-						</Button>
-					{/if}
-				</div>
-				<Button size="icon" type="submit" disabled={loading} class="flex-none">
-					{#if loading}
-						<LucideLoaderCircle class="animate-spin" />
-					{:else}
-						<LucideSearch />
-					{/if}
-				</Button>
-			</div>
-		</form>
-		<div class="flex gap-2">
-			<SearchFilter updateFilters={handleFilterChange} />
-			<SearchSort updateSort={handleSortChange} />
-		</div>
-	</div>
-</div>
+<SearchForm
+	bind:keyword
+	{lastSearchKeyword}
+	{loading}
+	onSubmit={handleSearch}
+	onFilterChange={handleFilterChange}
+	onSortChange={handleSortChange}
+	hasErrors={errors.length > 0}
+/>
 
 
-<div class="mb-32 mx-auto max-w-[75%] flex flex-col items-center justify-center relative">
-	<div class="w-full absolute -top-0 left-0">
-    {#if started && !loading}
-        <p class="text-zinc-500">
-   Fetched {searchResults.length} audio{Math.abs(searchResults.length) === 1 ? '' : 's'}
-   {#if prefetchingAudio}
-    <span class="ml-2 inline-flex items-center text-xs">
-    	<LucideLoaderCircle class="mr-1 h-3 w-3 animate-spin" />
-    	Prefetching audio...
-    </span>
-   {/if}
-  </p>
-    {/if}
-	</div>
-	<div class="w-full mt-6">
-		<Table.Root class="rounded-lg border backdrop-blur-sm">
-			<Table.Header class="rounded-lg">
-				<Table.Row>
-					<Table.Head class="w-[200px]">Audio ID</Table.Head>
-					<Table.Head>Name</Table.Head>
-					<Table.Head>Category</Table.Head>
-					<Table.Head class="text-right">Whitelister</Table.Head>
-				</Table.Row>
-			</Table.Header>
-			<Table.Body>
-				{#each searchResults as audio}
-					<Table.Row>
-						<Table.Head class="w-[200px]">
-							<div class="flex items-center gap-2">
-								{#if audio.version === 2}
-								<button
-									class={`flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 hover:bg-primary/20 transition-colors ${currentlyPlayingId === audio.id ? 'bg-white text-black hover:bg-white/80' : ''} relative`}
-									onclick={() => playAudio(audio.id)}
-									aria-label={currentlyPlayingId === audio.id ? "Pause audio" : "Play audio"}
-								>
-									{#if loadingAudioId === audio.id}
-										{@const circleRadius = 11}
-										{@const circleCircumference = 2 * Math.PI * circleRadius}
-										<svg class="absolute inset-0 h-full w-full" viewBox="0 0 24 24">
-											<circle
-												class="text-primary/10"
-												cx="12"
-												cy="12"
-												r={circleRadius}
-												fill="none"
-												stroke="currentColor"
-												stroke-width="2"
-											/>
-											<circle
-												class="text-white"
-												cx="12"
-												cy="12"
-												r={circleRadius}
-												fill="none"
-												stroke="currentColor"
-												stroke-width="2"
-												stroke-dasharray={circleCircumference}
-												stroke-dashoffset={circleCircumference * (1 - (downloadProgress[audio.id] || 0) / 100)}
-												stroke-linecap="round"
-												transform="rotate(-90 12 12)"
-											/>
-										</svg>
-										<LucideLoaderCircle class="h-4 w-4 animate-spin relative z-10" />
-									{:else if currentlyPlayingId === audio.id}
-										<MaterialSymbolsPauseRounded class="size-6" />
-									{:else}
-										<MaterialSymbolsPlayArrowRounded class="size-6" />
-									{/if}
-								</button>
-								{/if}
-								{audio.id}
-							</div>
-						</Table.Head>
-						<Table.Head>{audio.name}</Table.Head>
-						<Table.Head>{audio.category}</Table.Head>
-						<Table.Head class="text-right">
-							<a
-								class="underline underline-offset-2 transition-colors duration-200 hover:text-white"
-								href={buildWhitelisterUrl(audio.whitelisterType, audio.whitelisterUserId)}
-							>
-								{audio.whitelisterName}
-							</a>
-						</Table.Head>
-					</Table.Row>
-				{/each}
-			</Table.Body>
-		</Table.Root>
-
-		{#if started && !loading && searchResults.length === 0 && errors.length === 0}
-			<div class="mt-4 flex items-center justify-center">No results found.</div>
-		{/if}
-
-		<!-- Pagination Component -->
-		<Pagination.Root class="mt-8" count={totalItems} perPage={MAX_SEARCH_RESULTS_PER_PAGE} bind:page={currentPage}>
-			{#snippet children({ pages, currentPage })}
-				<Pagination.Content>
-					<Pagination.Item>
-						<Pagination.PrevButton onclick={(event) => handlePageChange(currentPage - 1)} />
-					</Pagination.Item>
-
-					{#each pages as page (page.key)}
-						{#if page.type === 'ellipsis'}
-							<Pagination.Item>
-								<Pagination.Ellipsis />
-							</Pagination.Item>
-						{:else}
-							<Pagination.Item>
-								<Pagination.Link
-									{page}
-									isActive={currentPage === page.value}
-									onclick={(event) => handlePageChange(page.value)}
-								>
-									{page.value}
-								</Pagination.Link>
-							</Pagination.Item>
-						{/if}
-					{/each}
-
-					<Pagination.Item>
-						<Pagination.NextButton onclick={(event) => handlePageChange(currentPage + 1)} />
-					</Pagination.Item>
-				</Pagination.Content>
-			{/snippet}
-		</Pagination.Root>
-		
-		<!-- Page selector -->
-		<div class="mt-4 flex items-center justify-center gap-2">
-			<span class="text-sm text-zinc-400">Go to page:</span>
-			<form
-				class="flex items-center gap-2"
-				onsubmit={(e) => {
-					e.preventDefault();
-					const formData = new FormData(e.currentTarget);
-					const pageInput = formData.get('pageInput');
-					const pageNumber = pageInput ? parseInt(pageInput.toString()) : null;
-					if (
-						pageNumber &&
-						!isNaN(pageNumber) &&
-						pageNumber > 0 &&
-						pageNumber <= Math.ceil(totalItems / MAX_SEARCH_RESULTS_PER_PAGE)
-					) {
-						handlePageChange(pageNumber);
-						// Clear page input
-						e.currentTarget.reset();
-					}
-				}}
-			>
-				<Input
-					name="pageInput"
-					class="w-16 text-center"
-					placeholder=""
-				/>
-				<Button type="submit" size="icon"> <LucideArrowRight class="size-8" /> </Button>
-			</form>
-		</div>
-	</div>
-</div>
+<SearchResults
+	{started}
+	{loading}
+	{searchResults}
+	{totalItems}
+	{currentPage}
+	{currentlyPlayingId}
+	{loadingAudioId}
+	{downloadProgress}
+	{prefetchingAudio}
+	onPlayAudio={playAudio}
+	onPageChange={handlePageChange}
+/>
 
 <!-- Hidden audio element for playback -->
 <audio bind:this={audioElement} class="hidden"></audio>
-
-<style>
-  /* No animation needed as we're using actual download progress */
-</style>
-
