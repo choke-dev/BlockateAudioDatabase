@@ -55,7 +55,7 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
     cookies.set('session', sessionId, {
       httpOnly: true,
       secure: true,
-      sameSite: 'lax',
+      sameSite: 'strict',
       maxAge: 30 * 24 * 60 * 60, // 30 days
       path: '/'
     });
@@ -72,6 +72,6 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
     throw redirect(302, '/?error=oauth_callback_failed');
   }
   
-  // Redirect to home page (outside try-catch)
+  // Redirect to home page
   throw redirect(302, '/');
 };
