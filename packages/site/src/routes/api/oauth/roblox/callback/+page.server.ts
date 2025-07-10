@@ -54,5 +54,5 @@ export const load: PageServerLoad = async ({ url, cookies }) => {
     throw redirect(302, '/?error=oauth_callback_failed');
   }
 
-  throw redirect(302, '/');
+  throw redirect(302, '/?success=oauth_callback_success');
 };
