@@ -57,7 +57,8 @@
 		return isValid;
 	}
 
-	async function handleSubmit() {
+	async function handleSubmit(event: Event) {
+		event.preventDefault();
 		if (!validateForm()) {
 			return;
 		}
@@ -118,107 +119,117 @@
 </script>
 
 <Dialog.Root bind:open={dialogOpen}>
-	<Dialog.Trigger>
-		<Button variant="outline" size="sm">
-			<LucidePlus class="mr-2 h-4 w-4" />
-			Request Whitelist
-		</Button>
-	</Dialog.Trigger>
-	<Dialog.Content class="sm:max-w-[425px]">
-		<Dialog.Header>
-			<Dialog.Title>Request Audio Whitelist</Dialog.Title>
-			<Dialog.Description>
-				Submit a request to whitelist an audio ID. Please provide all required information.
-			</Dialog.Description>
-		</Dialog.Header>
+  <Dialog.Trigger>
+    <Button variant="outline" size="sm">
+      <LucidePlus class="mr-2 h-4 w-4" />
+      Request Whitelist
+    </Button>
+  </Dialog.Trigger>
 
-		{#if submitMessage}
-			<div
-				class="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-green-800 dark:border-green-700 dark:bg-green-900 dark:text-green-300"
-			>
-				{submitMessage}
-			</div>
-		{/if}
+  <Dialog.Content class="sm:max-w-2xl">
+    <Dialog.Header>
+      <Dialog.Title>Request Audio Whitelist</Dialog.Title>
+      <Dialog.Description>
+        Submit a request to whitelist an audio ID. Please provide all required information.
+      </Dialog.Description>
+    </Dialog.Header>
 
-		{#if submitError}
-			<Alert.Root variant="destructive">
-				<Alert.Description>{submitError}</Alert.Description>
+    {#if submitMessage}
+      <Alert.Root variant="success">
+        <Alert.Description>{submitMessage}</Alert.Description>
+      </Alert.Root>
+    {/if}
+
+    {#if submitError}
+      <Alert.Root variant="destructive">
+        <Alert.Description>{submitError}</Alert.Description>
+      </Alert.Root>
+    {/if}
+
+    <!-- Wrapped all inputs in a <form> -->
+    <form onsubmit={handleSubmit} class="space-y-4">
+      <div class="space-y-2">
+        <Label for="audioId">Audio ID</Label>
+        <Input
+          id="audioId"
+          bind:value={audioId}
+          placeholder="Enter audio ID"
+          type="text"
+          pattern="[0-9]*"
+          inputmode="numeric"
+          class={errors.audioId ? 'border-red-500' : ''}
+        />
+        <p class="text-sm text-muted-foreground">
+          The numerical ID of the audio you want to whitelist
+        </p>
+        {#if errors.audioId}
+          <p class="text-sm text-red-600">{errors.audioId}</p>
+        {/if}
+      </div>
+
+      <div class="space-y-2">
+        <Label for="name">Audio Name</Label>
+        <Input
+          id="name"
+          bind:value={name}
+          placeholder="Enter audio name"
+          class={errors.name ? 'border-red-500' : ''}
+        />
+        <p class="text-sm text-muted-foreground">The name or title of the audio</p>
+        {#if errors.name}
+          <p class="text-sm text-red-600">{errors.name}</p>
+        {/if}
+      </div>
+
+      <div class="space-y-2">
+        <Label for="category">Category</Label>
+        <Input
+          id="category"
+          bind:value={category}
+          placeholder="Enter category (e.g., Dialogue, Undertale OST, SFX)"
+          class={errors.category ? 'border-red-500' : ''}
+        />
+        <p class="text-sm text-muted-foreground">The category this audio belongs to</p>
+        {#if errors.category}
+          <p class="text-sm text-red-600">{errors.category}</p>
+        {/if}
+      </div>
+
+      <div class="space-y-2">
+		{#if privateChecked}
+			<Alert.Root variant="warning">
+				<Alert.Description>
+					This option is intended for audio that was originally created by you or commissioned by you for use in your own world, or in someone else's world, such as private event worlds.
+				</Alert.Description>
 			</Alert.Root>
 		{/if}
-
-		<div class="space-y-4">
-			<div class="space-y-2">
-				<Label for="audioId">Audio ID</Label>
-				<Input
-					id="audioId"
-					bind:value={audioId}
-					placeholder="Enter audio ID (numerical)"
-					type="text"
-					pattern="[0-9]*"
-					inputmode="numeric"
-					class={errors.audioId ? 'border-red-500' : ''}
-				/>
-				<p class="text-sm text-muted-foreground">
-					The numerical ID of the audio you want to whitelist
-				</p>
-				{#if errors.audioId}
-					<p class="text-sm text-red-600">{errors.audioId}</p>
-				{/if}
-			</div>
-
-			<div class="space-y-2">
-				<Label for="name">Audio Name</Label>
-				<Input
-					id="name"
-					bind:value={name}
-					placeholder="Enter audio name"
-					class={errors.name ? 'border-red-500' : ''}
-				/>
-				<p class="text-sm text-muted-foreground">The name or title of the audio</p>
-				{#if errors.name}
-					<p class="text-sm text-red-600">{errors.name}</p>
-				{/if}
-			</div>
-
-			<div class="space-y-2">
-				<Label for="category">Category</Label>
-				<Input
-					id="category"
-					bind:value={category}
-					placeholder="Enter category (e.g., Dialogue, Undertale OST, Sound Effects (SFX))"
-					class={errors.category ? 'border-red-500' : ''}
-				/>
-				<p class="text-sm text-muted-foreground">The category this audio belongs to</p>
-				{#if errors.category}
-					<p class="text-sm text-red-600">{errors.category}</p>
-				{/if}
-			</div>
-
-			<div class="space-y-2">
-				<Checkbox id="private" bind:checked={privateChecked} />
-				<span class="text-sm text-muted-foreground">
-					Checking this will make the audio not appear in search results
-				</span>
-			</div>
+        <div class="flex items-center space-x-2">
+			<Checkbox id="private" bind:checked={privateChecked} />
+        	<span class="text-sm text-muted-foreground">
+        	  Checking this will make the audio not appear in search results
+        	</span>
 		</div>
+      </div>
 
-		<Dialog.Footer>
-			<Button
-				type="button"
-				variant="outline"
-				onclick={() => (dialogOpen = false)}
-				disabled={submitting}
-			>
-				Cancel
-			</Button>
-			<Button onclick={handleSubmit} disabled={submitting}>
-				{#if submitting}
-					<LucideLoader2 class="mr-2 h-4 w-4 animate-spin" />
-					Submitting...
-				{:else}
-					Submit Request
-				{/if}
-			</Button>
-		</Dialog.Footer>
-	</Dialog.Content>
+      <Dialog.Footer>
+        <Button
+          type="button"
+          variant="outline"
+          onclick={() => (dialogOpen = false)}
+          disabled={submitting}
+        >
+          Cancel
+        </Button>
+        <!-- Changed to type="submit" -->
+        <Button type="submit" disabled={submitting}>
+          {#if submitting}
+            <LucideLoader2 class="mr-2 h-4 w-4 animate-spin" />
+            Submitting...
+          {:else}
+            Submit Request
+          {/if}
+        </Button>
+      </Dialog.Footer>
+    </form>
+  </Dialog.Content>
 </Dialog.Root>

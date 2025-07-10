@@ -4,6 +4,7 @@
 	import * as Table from '$lib/components/ui/table';
 	import LucideList from '~icons/lucide/list';
 	import LucideLoader2 from '~icons/lucide/loader-2';
+	import Badge from '../badge/badge.svelte';
 
 	interface WhitelistRequest {
 		id: string;
@@ -53,12 +54,12 @@
 	function getStatusClass(status: string) {
 		switch (status) {
 			case 'APPROVED':
-				return 'bg-green-100 text-green-800 border-green-200';
+				return 'bg-[#009e57] text-black';
 			case 'REJECTED':
-				return 'bg-red-100 text-red-800 border-red-200';
+				return 'bg-[#3b0703] text-[#fab4af]';
 			case 'PENDING':
 			default:
-				return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+				return 'bg-[#3d2c00] text-[#fbe6ad]';
 		}
 	}
 
@@ -122,9 +123,12 @@
 								</Table.Cell>
 								<Table.Cell>{request.category}</Table.Cell>
 								<Table.Cell>
-									<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border {getStatusClass(request.status)}">
+									<Badge
+									variant="outline"
+									class={getStatusClass(request.status)}
+									>
 										{request.status}
-									</span>
+									</Badge>
 								</Table.Cell>
 								<Table.Cell class="text-sm text-muted-foreground">
 									{formatDate(request.createdAt)}
