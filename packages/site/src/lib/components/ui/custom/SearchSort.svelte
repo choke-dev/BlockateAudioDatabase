@@ -37,7 +37,7 @@
 
 	// Reset sort
 	const resetSort = () => {
-		sortField = 'id';
+		sortField = 'name';
 		sortOrder = 'asc';
 		appliedSort = null;
 		updateSort(null);
