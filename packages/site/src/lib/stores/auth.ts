@@ -60,11 +60,12 @@ function createAuthStore() {
     
     // Set user data (called from layout)
     setUser(user: User | null) {
-      set({
+      update(state => ({
+        ...state,
         user,
         loading: false,
         authenticated: !!user
-      });
+      }));
     },
     
     // Login function

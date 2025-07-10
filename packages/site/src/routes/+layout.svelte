@@ -18,23 +18,33 @@
 		clearAfterMs: 10900
 	});
 
+	// Reactively update auth store when server data changes
+	$effect(() => {
+		// Initialize auth store with server data immediately
+		// Handle the case where createdAt might be null from server
+		if (data.user) {
+			auth.setUser({
+				...data.user,
+				createdAt: data.user.createdAt || new Date().toISOString()
+			});
+		} else {
+			auth.setUser(null);
+		}
+	});
+
 	let versionCheckInterval: NodeJS.Timeout;
 	// Reload immediately if outdated on first load
-  	onMount(async () => {
-		// Initialize auth store with server data
-		//@ts-ignore
-		auth.setUser(data.user);
-		
-    	if (await updated.check()) {
-    	  location.reload();
-    	}
+	 	onMount(async () => {
+	   	if (await updated.check()) {
+	   	  location.reload();
+	   	}
 
-    	// Then check every hour (60*60*1000 ms)
-    	versionCheckInterval = setInterval(async () => {
-    	  if (await updated.check()) {
-    	    location.reload();
-    	  }
-    	}, 3600000);
+	   	// Then check every hour (60*60*1000 ms)
+	   	versionCheckInterval = setInterval(async () => {
+	   	  if (await updated.check()) {
+	   	    location.reload();
+	   	  }
+	   	}, 3600000);
 	});
 
 	onDestroy(() => clearInterval(versionCheckInterval));
