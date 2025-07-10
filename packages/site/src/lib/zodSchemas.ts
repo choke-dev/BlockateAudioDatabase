@@ -74,11 +74,17 @@ export const SearchFilterSchema = z.object({
     sort: SearchSortSchema.optional()
 });
 
+
 export const WhitelistRequestSchema = z.object({
-    audioId: z.bigint().min(1n, "Audio ID is required"),
-    name: z.string().min(1, "Name is required"),
-    category: z.string().min(1, "Category is required"),
-    is_private: z.boolean().default(false),
+  audioId: z.preprocess((val) => {
+    if (typeof val === "string" && /^\d+$/.test(val)) {
+      return BigInt(val);
+    }
+    return val;
+  }, z.bigint().min(1n, "Audio ID is required")),
+  name: z.string().min(1, "Name is required"),
+  category: z.string().min(1, "Category is required"),
+  is_private: z.boolean().default(false),
 });
 
 export const WhitelistRequestResponseSchema = z.object({

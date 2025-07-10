@@ -19,17 +19,15 @@ export const POST: RequestHandler = async (event) => {
         const { audioId, name, category, is_private } = WhitelistRequestSchema.parse(body);
         
         const [existingRequest, isWhitelisted] = await Promise.all([
-            prisma.whitelistRequest.findUnique({
+            prisma.whitelistRequest.findFirst({
                 where: {
-                    audioId_userId: {
-                        audioId,
-                        userId: user.id
-                    }
+                    audio_id: String(audioId),
+                    userId: user.id
                 }
             }),
             prisma.audios.findUnique({
                 where: {
-                    id: audioId
+                    id: BigInt(audioId)
                 },
                 select: { id: true } // Only check existence
             })
@@ -69,13 +67,14 @@ export const POST: RequestHandler = async (event) => {
             if (err.response?.status === 404) {
                 return json({ error: "The provided audio ID does not exist." }, { status: 404 });
             }
+            
+            return json({ error: 'Failed to fetch audio metadata. Please try again later.' }, { status: 500 });
         }
 
         if (audioMetadata.assetType !== "Audio") {
             return json({ error: "The provided ID is not an audio asset." }, { status: 400 });
         }
 
-        console.dir(audioMetadata)
         const moderationState = audioMetadata.moderationResult.moderationState; // "Approved", "Rejected", "Reviewing"
         switch(moderationState) {
             case "Rejected":
@@ -94,31 +93,28 @@ export const POST: RequestHandler = async (event) => {
             body: [Number(audioId)]
         });
 
-		if (!audioUrlsResponse.ok) {
-			return json({ error: 'Failed to check audio accessibility, please try again later.' }, { status: 500 });
-		}
+		      if (!audioUrlsResponse.ok) {
+		          return json({ error: 'Failed to check audio accessibility, please try again later.' }, { status: 500 });
+		      }
 
-		if (audioUrlsResponse._data[0]?.code === 403) {
-            return json({ error: 'BMusicUploader does not have "Use" permissions for this audio. Please grant them the "Use" permission in the audio\'s permissions page.' }, { status: 400 });
-		}
+		      if (audioUrlsResponse._data[0]?.code === 403) {
+		          return json({ error: 'BMusicUploader does not have "Use" permissions for this audio. Please grant them the "Use" permission in the audio\'s permissions page.' }, { status: 400 });
+		      }
         
         // Create new whitelist request
         const whitelistRequest = await prisma.whitelistRequest.create({
             data: {
-                audioId,
+                audio_id: audioId.toString(),
                 name,
                 category,
                 userId: user.id,
-                private: is_private,
-                status: 'PENDING'
-            },
-            include: {
-                user: {
-                    select: {
-                        username: true,
-                        robloxId: true
-                    }
-                }
+                audio_visibility: is_private ? 'PRIVATE' : 'PUBLIC',
+                status: 'PENDING',
+                requester: {
+                    discord: { id: null, username: null },
+                    roblox: { id: user.robloxId, username: user.username }
+                },
+                audio_url: audioUrlsResponse._data[0]
             }
         });
 
@@ -132,14 +128,13 @@ export const POST: RequestHandler = async (event) => {
         })
         
         return json({
-            id: whitelistRequest.id,
-            audioId: whitelistRequest.audioId,
+            id: whitelistRequest.request_id,
+            audioId: whitelistRequest.audio_id,
             name: whitelistRequest.name,
             category: whitelistRequest.category,
             userId: whitelistRequest.userId,
-            reason: whitelistRequest.reason,
             status: whitelistRequest.status,
-            createdAt: whitelistRequest.createdAt.toISOString(),
+            createdAt: whitelistRequest.created_at.toISOString(),
             updatedAt: whitelistRequest.updatedAt.toISOString()
         });
         
@@ -178,20 +173,19 @@ export const GET: RequestHandler = async (event) => {
                 userId: user.id
             },
             orderBy: {
-                createdAt: 'desc'
+                created_at: 'desc'
             }
         });
         
         return json(
             requests.map(request => ({
-                id: request.id,
-                audioId: request.audioId,
+                id: request.request_id,
+                audioId: request.audio_id,
                 name: request.name,
                 category: request.category,
                 userId: request.userId,
-                reason: request.reason,
                 status: request.status,
-                createdAt: request.createdAt.toISOString(),
+                createdAt: request.created_at.toISOString(),
                 updatedAt: request.updatedAt.toISOString()
             }))
         );

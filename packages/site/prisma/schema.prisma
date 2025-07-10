@@ -9,7 +9,7 @@ datasource db {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model Audio {
-  id                String @id // never use bigint on this
+  id                String  @id // never use bigint on this
   name              String
   category          String
   whitelisterName   String
@@ -18,23 +18,22 @@ model Audio {
   private           Boolean @default(false)
   audioUrl          String?
 
-  version Int @default(2)
+  version    Int      @default(2)
   created_at DateTime @default(now()) @db.Timestamptz()
   updated_at DateTime @default(now()) @db.Timestamptz()
 }
 
 model Audios {
-  id        BigInt @id
-  name      String
-  category  String
+  id       BigInt @id
+  name     String
+  category String
 
   is_previewable Boolean @default(true)
-  audio_url  String?
+  audio_url      String?
 
-  requester Json // { "discord": { id: string, username: string }, "roblox": { id: string, username: string } }
-  whitelister Json // { "discord": { id: string, username: string }, "roblox": { id: string, username: string } }
-
-  audio_lifecycle AudioLifecycle @default(ACTIVE)
+  requester        Json            @default("{ \"discord\": { \"id\": null, \"username\": null }, \"roblox\": { \"id\": null, \"username\": null } }")
+  whitelister      Json            @default("{ \"discord\": { \"id\": null, \"username\": null }, \"roblox\": { \"id\": null, \"username\": null } }")
+  audio_lifecycle  AudioLifecycle  @default(ACTIVE)
   audio_visibility AudioVisibility @default(PUBLIC)
 
   created_at DateTime @default(now()) @db.Timestamptz()
@@ -51,9 +50,9 @@ model User {
   createdAt DateTime @default(now()) @db.Timestamptz()
   updatedAt DateTime @updatedAt @db.Timestamptz()
 
-  sessions         Session[]
-  oauthTokens      OAuthToken[]
-  whitelistRequests WhitelistRequest[]
+  sessions           Session[]
+  oauthTokens        OAuthToken[]
+  whitelist_requests WhitelistRequest[]
 
   @@map("users")
 }
@@ -72,7 +71,7 @@ model Session {
 model OAuthToken {
   id           String    @id @default(cuid())
   userId       String
-  provider     String    // "roblox"
+  provider     String // "roblox"
   accessToken  String
   refreshToken String?
   expiresAt    DateTime? @db.Timestamptz()
@@ -86,21 +85,24 @@ model OAuthToken {
   @@map("oauth_tokens")
 }
 
-
 model WhitelistRequest {
-  id        String   @id @default(cuid())
-  audioId   String
-  name      String
-  category  String
+  request_id String @id @default(cuid())
+  audio_id   String
+  name       String
+  category   String
 
-  private   Boolean @default(false)
-  status    WhitelistRequestStatus @default(PENDING)
-  createdAt DateTime @default(now()) @db.Timestamptz()
-  updatedAt DateTime @updatedAt @db.Timestamptz()
+  audio_visibility AudioVisibility        @default(PUBLIC)
+  status           WhitelistRequestStatus @default(PENDING)
+  created_at       DateTime               @default(now()) @db.Timestamptz()
+  updatedAt        DateTime               @updatedAt @db.Timestamptz()
+  audio_url        String
+  acknowledged Boolean @default(false)
 
-  requestedById String
-  requestedBy   User @relation(fields: [requestedById], references: [id])
-  
+  requester Json
+
+  userId String
+  User   User   @relation(fields: [userId], references: [id])
+
   @@map("whitelist_requests")
 }
 
