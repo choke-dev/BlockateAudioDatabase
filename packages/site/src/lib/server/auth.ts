@@ -33,8 +33,8 @@ export async function getAuthenticatedUser(event: RequestEvent): Promise<Authent
     const validAccessToken = await robloxOAuth.getValidAccessToken(user.id);
     
     if (!validAccessToken) {
-      // User exists but tokens are invalid/expired
-      // Don't clear session here as user might want to re-authenticate
+      // User exists but tokens are invalid/expired - clear session to force re-authentication
+      event.cookies.delete('session', { path: '/' });
       return null;
     }
     
