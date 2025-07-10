@@ -2,14 +2,14 @@
 	import ErrorDisplay from '$lib/components/ui/custom/ErrorDisplay.svelte';
 	import SearchForm from '$lib/components/ui/custom/SearchForm.svelte';
 	import SearchResults from '$lib/components/ui/custom/SearchResults.svelte';
-	import type { Audio } from '@prisma/client';
+	import type { Audios } from '@prisma/client';
 	import { onMount, onDestroy } from 'svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { browser } from '$app/environment';
 
 	let errors = $state<{ message: string }[]>([]);
-	let searchResults: Audio[] = $state([]);
+	let searchResults: Audios[] = $state([]);
 	let loading = $state(false);
 	let currentlyPlayingId = $state<string | null>(null);
 	let lastPlayedAudioId = $state<string | null>(null);
@@ -38,7 +38,7 @@
 
 		started = true;
 		loading = true;
-        errors = [ { message: 'test' } ]
+        errors = [];
 		searchResults = [];
 		audioElement.pause();
 		currentlyPlayingId = null;
@@ -57,6 +57,7 @@
 		// Reset page to 1 if keyword has changed
 		if (keyword.toLowerCase() !== lastSearchKeyword.toLowerCase()) {
 			currentPage = 1;
+			totalItems = 0;
 		}
 		
 		let query: URLSearchParams | undefined = new URLSearchParams(page.url.searchParams.toString());
@@ -180,7 +181,7 @@
 			prefetchedAudioUrls = cachedUrls;
 			
 			// Filter out audio IDs that are already in blob storage or cached
-			const uncachedAudioIds = audioIds.filter(id => !audioBlobs[id] && !cachedUrls[id]);
+			const uncachedAudioIds = audioIds.filter(id => !audioBlobs[String(id)] && !cachedUrls[String(id)]);
 			
 			if (uncachedAudioIds.length === 0) {
 				// All audio URLs are already cached or stored as blobs
@@ -194,7 +195,7 @@
 				headers: {
 					'Content-Type': 'application/json'
 				},
-				body: JSON.stringify(uncachedAudioIds)
+				body: JSON.stringify(uncachedAudioIds.map(id => id.toString()))
 			});
 			
 			if (!response.ok) {
@@ -299,8 +300,8 @@
 			
 			// Use prefetched URL if available, otherwise fetch it
 			// Find the audio object in searchResults by matching the ID
-			const audioObject = searchResults.find(audio => audio.id === audioId);
-			let audioUrl = prefetchedAudioUrls[audioId] || cachedUrls[audioId] || audioObject?.audioUrl;
+			const audioObject = searchResults.find(audio => String(audio.id) === audioId);
+			let audioUrl = prefetchedAudioUrls[audioId] || cachedUrls[audioId] || audioObject?.audio_url;
 			
 			if (!audioUrl) {
 				// Fetch the audio URL from the API if not cached
@@ -348,7 +349,7 @@
 			// If the audio fails to load and we haven't tried the API yet, try fetching from API
 			if (!response.ok) {
 				// Check if we were using a direct audioUrl from the audio object
-				const wasUsingDirectUrl = audioObject?.audioUrl === audioUrl;
+				const wasUsingDirectUrl = audioObject?.audio_url === audioUrl;
 				
 				if (wasUsingDirectUrl) {
 					// Try to fetch a new URL from the API

@@ -24,7 +24,7 @@
 	];
 
 	// State for the sort
-	let sortField = $state<string>('id');
+	let sortField = $state<string>('name');
 	let sortOrder = $state<'asc' | 'desc'>('asc');
 	let appliedSort = $state<{ field: string; order: 'asc' | 'desc' } | null>(null);
 	let { updateSort } = $props();

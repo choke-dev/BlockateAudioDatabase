@@ -32,12 +32,13 @@ const previewHandler: RequestHandler = async (event) => {
     if (!requestJson.success) return new Response(JSON.stringify({ errors: requestJson.error.issues }), { status: 400 });
 
     const audioIds = requestJson.data;
-    const audios = await prisma.audio.findMany({
+    const audios = await prisma.audios.findMany({
         where: {
             id: {
                 in: audioIds
             },
-            private: false
+            audio_visibility: "PUBLIC",
+            audio_lifecycle: "ACTIVE"
         }
     })
     const missingIds = audioIds.filter(id => !audios.some(audio => audio.id === id));
@@ -60,13 +61,13 @@ const previewHandler: RequestHandler = async (event) => {
 
     const audioUrlDict: Record<string, string> = {};
     const audioIdsToFetch: number[] = [];
-    const audioUrlsToCheck: { id: string; url: string }[] = [];
+    const audioUrlsToCheck: { id: bigint; url: string }[] = [];
 
     // First check if audioUrl exists in the database
     for (const audio of audios) {
         // If audioUrl exists in the database, add it to check list
-        if (audio.audioUrl) {
-            audioUrlsToCheck.push({ id: audio.id, url: audio.audioUrl });
+        if (audio.audio_url) {
+            audioUrlsToCheck.push({ id: audio.id, url: audio.audio_url });
         } else {
             audioIdsToFetch.push(Number(audio.id));
         }
@@ -80,7 +81,7 @@ const previewHandler: RequestHandler = async (event) => {
         for (const { id, url } of audioUrlsToCheck) {
             if (validityResults[url]) {
                 // URL is valid, use it directly
-                audioUrlDict[id] = url;
+                audioUrlDict[String(id)] = url;
             } else {
                 // URL is invalid (404), need to fetch and reupload
                 console.log(`Audio URL for ID ${id} is invalid, will fetch and reupload`);
@@ -187,12 +188,11 @@ const previewHandler: RequestHandler = async (event) => {
                         // Update the database with the JukeHost URL
                         try {
                             // Ensure audioId is properly converted to string as per schema
-                            const stringAudioId = String(audioId);
-                            await prisma.audio.update({
-                                where: { id: stringAudioId },
-                                data: { audioUrl }
+                            await prisma.audios.update({
+                                where: { id: audioId },
+                                data: { audio_url: audioUrl }
                             });
-                            console.log(`Updated audio ${stringAudioId} in database with URL: ${audioUrl}`);
+                            console.log(`Updated audio ${audioId} in database with URL: ${audioUrl}`);
                             return true;
                         } catch (error) {
                             console.error(`Error updating audio ${audioId} in database:`, error);

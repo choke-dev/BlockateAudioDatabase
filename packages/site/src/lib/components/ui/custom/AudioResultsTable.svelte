@@ -2,10 +2,10 @@
 	import * as Table from '$lib/components/ui/table/index';
 	import AudioPlayButton from './AudioPlayButton.svelte';
 	import { buildWhitelisterUrl } from '$lib/whitelister';
-	import type { Audio } from '@prisma/client';
+	import type { Audios } from '@prisma/client';
 
 	interface Props {
-		searchResults: Audio[];
+		searchResults: Audios[];
 		currentlyPlayingId: string | null;
 		loadingAudioId: string | null;
 		downloadProgress: Record<string, number>;
@@ -35,13 +35,13 @@
 			<Table.Row>
 				<Table.Head class="w-[200px]">
 					<div class="flex items-center gap-2">
-						{#if audio.version === 2}
+						{#if audio.is_previewable}
 							<AudioPlayButton
-								audioId={audio.id}
-								isPlaying={currentlyPlayingId === audio.id}
-								isLoading={loadingAudioId === audio.id}
-								downloadProgress={downloadProgress[audio.id] || 0}
-								onPlay={onPlayAudio}
+							audioId={String(audio.id)}
+							isPlaying={currentlyPlayingId === String(audio.id)}
+							isLoading={loadingAudioId === String(audio.id)}
+							downloadProgress={downloadProgress[String(audio.id)] || 0}
+							onPlay={onPlayAudio}
 							/>
 						{/if}
 						{audio.id}
@@ -50,12 +50,28 @@
 				<Table.Head>{audio.name}</Table.Head>
 				<Table.Head>{audio.category}</Table.Head>
 				<Table.Head class="text-right">
-					<a
-						class="underline underline-offset-2 transition-colors duration-200 hover:text-white"
-						href={buildWhitelisterUrl(audio.whitelisterType, audio.whitelisterUserId)}
-					>
-						{audio.whitelisterName}
-					</a>
+					{#if audio.whitelister && typeof audio.whitelister === 'object'}
+						{@const whitelister = audio.whitelister as any}
+						{#if whitelister.roblox?.id && whitelister.roblox?.username}
+							<a
+								class="underline underline-offset-2 transition-colors duration-200 hover:text-white"
+								href={buildWhitelisterUrl('roblox', whitelister.roblox.id)}
+							>
+								{whitelister.roblox.username}
+							</a>
+						{:else if whitelister.discord?.id && whitelister.discord?.username}
+							<a
+								class="underline underline-offset-2 transition-colors duration-200 hover:text-white"
+								href={buildWhitelisterUrl('discord', whitelister.discord.id)}
+							>
+								{whitelister.discord.username}
+							</a>
+						{:else}
+							Unknown
+						{/if}
+					{:else}
+						Unknown
+					{/if}
 				</Table.Head>
 			</Table.Row>
 		{/each}

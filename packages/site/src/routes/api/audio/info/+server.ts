@@ -9,12 +9,12 @@ const infoHandler: RequestHandler = async (event) => {
         return new Response(JSON.stringify({ errors: [{ message: 'Missing "id" query parameter' }] }), { status: 400 })
     }
 
-    const audioIds = IDs.split(',').map((id: string) => id.trim());
+    const audioIds = IDs.split(',').map((id: string) => BigInt(id));
 
     // Get unique IDs for the database query
     const uniqueAudioIds = [...new Set(audioIds)];
 
-    const audiosFromDb = await prisma.audio.findMany({
+    const audiosFromDb = await prisma.audios.findMany({
         where: { id: { in: uniqueAudioIds } },
         select: {
             id: true,
@@ -32,7 +32,7 @@ const infoHandler: RequestHandler = async (event) => {
 
     // Reconstruct the response array preserving the original order and duplicates
     // Set non-existent entries as null instead of filtering them out
-    const audios = audioIds.map((id: string) => audioMap.get(id) || null);
+    const audios = audioIds.map((id: BigInt) => audioMap.get(id) || null);
 
     // Check if all entries are null (all IDs were not found)
     const allNull = audios.every((audio: any) => audio === null);

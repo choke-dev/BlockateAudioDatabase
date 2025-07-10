@@ -1,9 +1,13 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { requireAuth } from '$lib/server/auth.js';
-import { prisma } from '$lib/server/db.js';
+import { prisma, supabase } from '$lib/server/db.js';
 import { WhitelistRequestSchema } from '$lib/zodSchemas.js';
 import { z } from 'zod';
+import { FetchError, ofetch } from 'ofetch';
+import { AUDIO_FILE_PROXY_AUTH, ROBLOX_ACCOUNT_COOKIE } from '$env/static/private';
+
+const whitelistRequestChannel = supabase.channel('audio-whitelist')
 
 export const POST: RequestHandler = async (event) => {
     try {
@@ -12,37 +16,91 @@ export const POST: RequestHandler = async (event) => {
         
         // Parse and validate request body
         const body = await event.request.json();
-        const { audioId, name, category, reason } = WhitelistRequestSchema.parse(body);
+        const { audioId, name, category, is_private } = WhitelistRequestSchema.parse(body);
         
-        // Check if user already has a pending or approved request for this audio ID
-        const existingRequest = await prisma.whitelistRequest.findUnique({
-            where: {
-                audioId_userId: {
-                    audioId,
-                    userId: user.id
+        const [existingRequest, isWhitelisted] = await Promise.all([
+            prisma.whitelistRequest.findUnique({
+                where: {
+                    audioId_userId: {
+                        audioId,
+                        userId: user.id
+                    }
                 }
-            }
-        });
-        
+            }),
+            prisma.audios.findUnique({
+                where: {
+                    id: audioId
+                },
+                select: { id: true } // Only check existence
+            })
+        ]);
+
+        if (isWhitelisted) {
+            return json(
+                { error: 'This audio ID is already whitelisted for Blockate.' },
+                { status: 400 }
+            );
+        }
+
         if (existingRequest) {
-            switch(existingRequest.status) {
-                case 'PENDING':
-                    return json(
-                        { error: 'There is already a pending request for this audio ID' },
-                        { status: 409 }
-                    );
-                case 'APPROVED':
-                    return json(
-                        { error: 'This audio ID is already whitelisted for Blockate.' },
-                        { status: 409 }
-                    );
-                case 'REJECTED':
-                    return json(
-                        { error: 'The request for this audio ID has been rejected.' },
-                        { status: 409 }
-                    )
+            const messages = {
+                'PENDING': 'There is already a pending request for this audio ID',
+                'APPROVED': 'This audio ID is already whitelisted for Blockate.',
+                'REJECTED': 'The request for this audio ID has been rejected.'
+            };
+            return json(
+                { error: messages[existingRequest.status] },
+                { status: 400 }
+            );
+        }
+
+        // Validation Checks
+        // Check if audio ID is valid
+        let audioMetadata;
+        try {
+            audioMetadata = await ofetch(`https://apis.roblox.com/assets/user-auth/v1/assets/${audioId}?readMask=assetId,assetType,creationContext,description,displayName,moderationResult,icon,previews,revisionCreateTime,State`, {
+                headers: {
+                    Cookie: `.ROBLOSECURITY=${ROBLOX_ACCOUNT_COOKIE}`
+                }
+            })
+        } catch(err) {
+            if (!(err instanceof FetchError)) return json({ error: 'An unexpected error occurred. Please try again later.' }, { status: 500 });
+
+            if (err.response?.status === 404) {
+                return json({ error: "The provided audio ID does not exist." }, { status: 404 });
             }
         }
+
+        if (audioMetadata.assetType !== "Audio") {
+            return json({ error: "The provided ID is not an audio asset." }, { status: 400 });
+        }
+
+        console.dir(audioMetadata)
+        const moderationState = audioMetadata.moderationResult.moderationState; // "Approved", "Rejected", "Reviewing"
+        switch(moderationState) {
+            case "Rejected":
+                return json({ error: "The provided audio ID has been rejected by Roblox moderation." }, { status: 400 });
+            case "Reviewing":
+                return json({ error: "The provided audio ID is currently under review by Roblox moderation. Please try again later." }, { status: 400 });
+        }
+
+        // Check if audio ID is accessible
+        const audioUrlsResponse = await ofetch.raw('http://109.106.244.58:3789/audio/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: AUDIO_FILE_PROXY_AUTH
+            },
+            body: [Number(audioId)]
+        });
+
+		if (!audioUrlsResponse.ok) {
+			return json({ error: 'Failed to check audio accessibility, please try again later.' }, { status: 500 });
+		}
+
+		if (audioUrlsResponse._data[0]?.code === 403) {
+            return json({ error: 'BMusicUploader does not have "Use" permissions for this audio. Please grant them the "Use" permission in the audio\'s permissions page.' }, { status: 400 });
+		}
         
         // Create new whitelist request
         const whitelistRequest = await prisma.whitelistRequest.create({
@@ -51,7 +109,7 @@ export const POST: RequestHandler = async (event) => {
                 name,
                 category,
                 userId: user.id,
-                reason: reason || null,
+                private: is_private,
                 status: 'PENDING'
             },
             include: {
@@ -63,6 +121,15 @@ export const POST: RequestHandler = async (event) => {
                 }
             }
         });
+
+        whitelistRequestChannel.send({
+            type: "broadcast",
+            event: "new-whitelist-request",
+            payload: {
+                ...whitelistRequest,
+                audioUrl: audioUrlsResponse._data[0]
+            }
+        })
         
         return json({
             id: whitelistRequest.id,

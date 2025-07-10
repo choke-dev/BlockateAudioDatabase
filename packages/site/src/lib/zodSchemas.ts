@@ -1,23 +1,46 @@
 import { z } from "zod";
 
 export const AudioSchema = z.object({
-    id: z.string(),
+    id: z.bigint(),
     name: z.string(),
     category: z.string(),
-    whitelisterName: z.string(),
-    whitelisterUserId: z.number(),
-    whitelisterType: z.string(),
+    is_previewable: z.boolean().default(true),
+    audio_url: z.string().nullable(),
+    requester: z.object({
+        discord: z.object({
+            id: z.string().nullable(),
+            username: z.string().nullable(),
+        }),
+        roblox: z.object({
+            id: z.string().nullable(),
+            username: z.string().nullable(),
+        }),
+    }),
+    whitelister: z.object({
+        discord: z.object({
+            id: z.string().nullable(),
+            username: z.string().nullable(),
+        }),
+        roblox: z.object({
+            id: z.string().nullable(),
+            username: z.string().nullable(),
+        }),
+    }),
+    audio_lifecycle: z.enum(["ACTIVE", "MODERATED"]).default("ACTIVE"),
+    audio_visibility: z.enum(["PUBLIC", "PRIVATE"]).default("PUBLIC"),
+    created_at: z.date().default(new Date()),
+    updated_at: z.date().default(new Date()),
 })
 
-export const AudioPreviewAPISchema = z.array(z.string());
+export const AudioPreviewAPISchema = z.array(z.string().transform(val => BigInt(val)));
 
 export const BatchPatchAudioSchema = z.record(
-    z.string(),
+    z.bigint(),
     AudioSchema.partial()
 )
 
 export const BatchDeleteAudioSchema = z.array(
-    z.string()
+    z.bigint()
 )
 
 export const SearchSortSchema = z.object({
@@ -52,14 +75,14 @@ export const SearchFilterSchema = z.object({
 });
 
 export const WhitelistRequestSchema = z.object({
-    audioId: z.string().min(1, "Audio ID is required"),
+    audioId: z.bigint().min(1n, "Audio ID is required"),
     name: z.string().min(1, "Name is required"),
     category: z.string().min(1, "Category is required"),
-    reason: z.string().optional()
+    is_private: z.boolean().default(false),
 });
 
 export const WhitelistRequestResponseSchema = z.object({
-    id: z.string(),
+    id: z.bigint(),
     audioId: z.string(),
     name: z.string(),
     category: z.string(),

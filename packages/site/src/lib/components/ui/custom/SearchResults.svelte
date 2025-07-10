@@ -4,12 +4,12 @@
 	import PageSelector from './PageSelector.svelte';
 	import LucideLoaderCircle from '~icons/lucide/loader-circle';
 	import { MAX_SEARCH_RESULTS_PER_PAGE } from '$lib/config/search';
-	import type { Audio } from '@prisma/client';
+	import type { Audios } from '@prisma/client';
 
 	interface Props {
 		started: boolean;
 		loading: boolean;
-		searchResults: Audio[];
+		searchResults: Audios[];
 		totalItems: number;
 		currentPage: number;
 		currentlyPlayingId: string | null;

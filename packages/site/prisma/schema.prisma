@@ -23,6 +23,26 @@ model Audio {
   updated_at DateTime @default(now()) @db.Timestamptz()
 }
 
+model Audios {
+  id        BigInt @id
+  name      String
+  category  String
+
+  is_previewable Boolean @default(true)
+  audio_url  String?
+
+  requester Json // { "discord": { id: string, username: string }, "roblox": { id: string, username: string } }
+  whitelister Json // { "discord": { id: string, username: string }, "roblox": { id: string, username: string } }
+
+  audio_lifecycle AudioLifecycle @default(ACTIVE)
+  audio_visibility AudioVisibility @default(PUBLIC)
+
+  created_at DateTime @default(now()) @db.Timestamptz()
+  updated_at DateTime @default(now()) @db.Timestamptz()
+
+  @@map("audios")
+}
+
 model User {
   id        String   @id @default(cuid())
   robloxId  String   @unique
@@ -72,16 +92,26 @@ model WhitelistRequest {
   audioId   String
   name      String
   category  String
-  userId    String
-  reason    String?
+
+  private   Boolean @default(false)
   status    WhitelistRequestStatus @default(PENDING)
   createdAt DateTime @default(now()) @db.Timestamptz()
   updatedAt DateTime @updatedAt @db.Timestamptz()
+
+  requestedById String
+  requestedBy   User @relation(fields: [requestedById], references: [id])
   
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  @@unique([audioId, userId])
   @@map("whitelist_requests")
+}
+
+enum AudioLifecycle {
+  ACTIVE
+  MODERATED
+}
+
+enum AudioVisibility {
+  PUBLIC
+  PRIVATE
 }
 
 enum WhitelistRequestStatus {

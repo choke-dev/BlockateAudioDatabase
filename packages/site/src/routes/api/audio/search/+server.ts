@@ -46,7 +46,11 @@ export const POST: RequestHandler = async (event) => {
         const requestBody = SearchRequestSchema.safeParse(parsedRequestBody);
 
         let filterConditions: Record<string, { contains: string; mode: 'insensitive' }>[] = [];
-        let sortOption = {};
+        let sortOption: any = {
+            orderBy: {
+                name: 'asc'
+            }
+        };
         let filterType = "AND";
 
         if (requestBody.success) {
@@ -73,8 +77,8 @@ export const POST: RequestHandler = async (event) => {
             }
 
             // Handle sort
-            if (requestBody.data!.sort) {
-                const { field, order } = requestBody.data!.sort;
+            if (requestBody.data?.sort) {
+                const { field, order } = requestBody.data.sort;
 
                 // Validate sort field
                 if (!validSortFields.includes(field)) {
@@ -94,7 +98,8 @@ export const POST: RequestHandler = async (event) => {
 
         // Construct the where clause
         const whereClause: any = {
-            private: false
+            audio_visibility: "PUBLIC",
+            audio_lifecycle: "ACTIVE"
         };
 
         // Add name search if query exists
@@ -135,8 +140,8 @@ export const POST: RequestHandler = async (event) => {
                 // Prepare sort SQL based on sortOption
                 let sortSql = Prisma.sql`ORDER BY extensions.SIMILARITY(name, ${query}) DESC`;
 
-                if (requestBody.success && requestBody.data!.sort) {
-                    const { field, order } = requestBody.data!.sort;
+                if (requestBody.success && requestBody.data.sort) {
+                    const { field, order } = requestBody.data.sort;
                     if (validSortFields.includes(field)) {
                         sortSql = Prisma.sql`ORDER BY ${Prisma.raw(field)} ${Prisma.raw(order)}, extensions.SIMILARITY(name, ${query}) DESC`;
                     }
@@ -146,8 +151,8 @@ export const POST: RequestHandler = async (event) => {
                 const [searchResults, countResults] = await Promise.all([
                     // Query for audio results
                     prisma.$queryRaw<any[]>`
-                        SELECT "id", "name", "category", "whitelisterName", "whitelisterType", "whitelisterUserId", "audioUrl", "version", "created_at" FROM public."Audio"
-                        WHERE private = false
+                        SELECT "id", "name", "category", "is_previewable", "whitelister", "audio_url", "created_at" FROM public."audios"
+                        WHERE audio_visibility = 'PUBLIC' AND audio_lifecycle = 'ACTIVE'
                         AND (
                             name ILIKE ${`%${query}%`} OR
                             extensions.SIMILARITY(name, ${query}) > ${FUZZY_SEARCH_THRESHOLD}
@@ -160,8 +165,8 @@ export const POST: RequestHandler = async (event) => {
 
                     // Query for total count
                     prisma.$queryRaw<{ count: BigInt }[]>`
-                        SELECT COUNT(*) as count FROM "Audio"
-                        WHERE private = false
+                        SELECT COUNT(*) as count FROM "audios"
+                        WHERE audio_visibility = 'PUBLIC' AND audio_lifecycle = 'ACTIVE'
                         AND (
                             name ILIKE ${`%${query}%`} OR
                             extensions.SIMILARITY(name, ${query}) > ${FUZZY_SEARCH_THRESHOLD}
@@ -179,7 +184,7 @@ export const POST: RequestHandler = async (event) => {
                 // Promisify the standard search and count operations
                 const [searchResults, countResult] = await Promise.all([
                     // Standard Prisma query for results
-                    prisma.audio.findMany({
+                    prisma.audios.findMany({
                         where: whereClause,
                         skip: (currentPage - 1) * MAX_SEARCH_RESULTS_PER_PAGE,
                         take: MAX_SEARCH_RESULTS_PER_PAGE,
@@ -187,18 +192,16 @@ export const POST: RequestHandler = async (event) => {
                             id: true,
                             name: true,
                             category: true,
-                            whitelisterName: true,
-                            whitelisterType: true,
-                            whitelisterUserId: true,
-                            audioUrl: true,
-                            version: true,
+                            is_previewable: true,
+                            whitelister: true,
+                            audio_url: true,
                             created_at: true
                         },
                         ...sortOption
                     }),
 
                     // Standard Prisma query for count
-                    prisma.audio.count({
+                    prisma.audios.count({
                         where: whereClause,
                     })
                 ]);
@@ -209,7 +212,7 @@ export const POST: RequestHandler = async (event) => {
         } else {
             // If no query, use standard Prisma query with Promise.all
             const [searchResults, countResult] = await Promise.all([
-                prisma.audio.findMany({
+                prisma.audios.findMany({
                     where: whereClause,
                     skip: (currentPage - 1) * MAX_SEARCH_RESULTS_PER_PAGE,
                     take: MAX_SEARCH_RESULTS_PER_PAGE,
@@ -217,17 +220,15 @@ export const POST: RequestHandler = async (event) => {
                         id: true,
                         name: true,
                         category: true,
-                        whitelisterName: true,
-                        whitelisterType: true,
-                        whitelisterUserId: true,
-                        audioUrl: true,
-                        version: true,
+                        is_previewable: true,
+                        whitelister: true,
+                        audio_url: true,
                         created_at: true
                     },
                     ...sortOption
                 }),
 
-                prisma.audio.count({
+                prisma.audios.count({
                     where: whereClause,
                 })
             ]);
