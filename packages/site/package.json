@@ -73,7 +73,7 @@
 		"@tanstack/table-core": "^8.20.5",
 		"@urbanzoo/remove-accents": "^1.0.2",
 		"arctic": "^3.1.1",
-		"argon2": "^0.41.1",
+		"argon2": "^0.43.0",
 		"axios": "^1.7.9",
 		"drizzle-orm": "^0.33.0",
 		"file-type": "^20.0.0",
